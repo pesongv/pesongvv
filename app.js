@@ -72,7 +72,7 @@ function renderSeSubjects(){
     btn.className='sub-tab'+(s===activeSeSubject?' active':'');
     btn.textContent=s;btn.onclick=()=>switchSeSubject(s);
     tabsEl.appendChild(btn);
-    const data=S.get('se-data-'+s,{achievement:'',activity:'',phrases:''});
+    const data=S.get('se-data-'+s,{achievement:'',activities:[],phrases:''});
     const panel=document.createElement('div');
     panel.className='sub-panel'+(s===activeSeSubject?' active':'');
     panel.id='se-panel-'+s;
@@ -81,9 +81,14 @@ function renderSeSubjects(){
         <span style="font-size:14px;font-weight:700;color:var(--text);">${esc(s)}</span>
         <button class="btn btn-danger" style="font-size:11px;padding:4px 10px;" onclick="deleteSeSubject('${esc(s)}')">삭제</button>
       </div>
-      <div class="grid-2" style="margin-bottom:16px;">
-        <div><label>성취기준</label><textarea id="se-ach-${s}" placeholder="예: 운동 수행 능력을 향상시키고 체력을 기른다." oninput="saveSeData('${s}')">${esc(data.achievement)}</textarea></div>
-        <div><label>활동 내용</label><textarea id="se-act-${s}" placeholder="예: 배드민턴 기초기술 수행평가, 모둠별 경기 진행" oninput="saveSeData('${s}')">${esc(data.activity)}</textarea></div>
+      <div style="margin-bottom:16px;">
+        <label>성취기준</label>
+        <textarea id="se-ach-${s}" placeholder="예: 운동 수행 능력을 향상시키고 체력을 기른다." oninput="saveSeData('${s}')">${esc(data.achievement)}</textarea>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="margin-bottom:8px;display:block;">활동 목록 <span style="font-size:10px;color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0;">날짜순 자동 정렬</span></label>
+        <div class="activity-list" id="se-acts-${s}"></div>
+        <button class="add-activity-btn" onclick="addSeActivity('${s}')">+ 활동 추가</button>
       </div>
       <div class="ai-box">
         <div class="ai-box-title">🤖 AI용 텍스트</div>
@@ -101,9 +106,14 @@ function renderSeSubjects(){
           <span class="phrase-count-badge" id="se-count-${s}">0개</span>
         </div>
         <div class="phrase-hint">형식: <code>[카테고리] 문장내용</code> 으로 한 줄씩 입력<br>예) <code>[적극적참여]</code> 수업 활동에 적극적으로 참여하는 모습을 보임.</div>
+        <div class="format-btn-row">
+          <button class="btn btn-ghost" style="font-size:11px;padding:5px 12px;" onclick="formatPhrases('se-phrases-${s}','se-count-${s}','${s}','se')">✨ 형식 정리</button>
+          <span style="font-size:11px;color:var(--text-muted);">AI에서 받은 문구를 붙여넣고 형식 정리 버튼을 클릭하세요</span>
+        </div>
         <textarea id="se-phrases-${s}" placeholder="AI에게 받은 문구를 여기에 붙여넣으세요..." oninput="saveSeData('${s}')" style="min-height:160px;">${esc(data.phrases)}</textarea>
       </div>`;
     panelsEl.appendChild(panel);
+    renderSeActivities(s, data.activities||[]);
     updateCount('se-phrases-'+s,'se-count-'+s);
   });
 }
@@ -118,10 +128,120 @@ function switchSeSubject(s){
 function saveSeData(s){
   S.set('se-data-'+s,{
     achievement:document.getElementById('se-ach-'+s)?.value||'',
-    activity:document.getElementById('se-act-'+s)?.value||'',
+    activities:getSeActivities(s),
     phrases:document.getElementById('se-phrases-'+s)?.value||''
   });
   updateCount('se-phrases-'+s,'se-count-'+s);
+}
+
+// ── 활동 행 UI (세특) ──
+let seActCount=0;
+function makeActivityRowHtml(uid,act){
+  const cfg=S.get('cfg',{year:'2026'});
+  const currentYear=parseInt(cfg.year)||2026;
+  const years=[currentYear-1,currentYear,currentYear+1];
+  const yearOpts=years.map(y=>`<option value="${y}" ${act.year==y?'selected':''}>${y}년</option>`).join('');
+  const months=Array.from({length:12},(_,i)=>i+1).map(m=>`<option value="${m}" ${act.month==m?'selected':''}>${m}월</option>`).join('');
+  const days=Array.from({length:31},(_,i)=>i+1).map(d=>`<option value="${d}" ${act.day==d?'selected':''}>${d}일</option>`).join('');
+  return `<div class="activity-row" id="act-row-${uid}">
+    <div class="act-date-col">
+      <label>날짜</label>
+      <div class="activity-date-inputs">
+        <select id="act-y-${uid}" onchange="sortAndSaveSeActs(this)" data-uid="${uid}">${yearOpts}</select>
+        <select id="act-m-${uid}" onchange="sortAndSaveSeActs(this)" data-uid="${uid}">${months}</select>
+        <select id="act-d-${uid}" onchange="sortAndSaveSeActs(this)" data-uid="${uid}">${days}</select>
+      </div>
+    </div>
+    <div>
+      <label>활동명</label>
+      <input type="text" id="act-name-${uid}" value="${esc(act.name||'')}" placeholder="예: 배드민턴 수행평가" oninput="saveSeFromRow(this)">
+    </div>
+    <div>
+      <label>활동설명 <span style="font-size:10px;color:var(--text-muted);text-transform:none;font-weight:400;">(선택)</span></label>
+      <textarea id="act-desc-${uid}" placeholder="AI 맥락 파악용 설명..." oninput="saveSeFromRow(this)">${esc(act.desc||'')}</textarea>
+    </div>
+    <div class="act-del-col" style="padding-top:20px;">
+      <button class="btn btn-danger" style="font-size:11px;padding:5px 10px;white-space:nowrap;" onclick="removeSeActivity(this,'${uid}')">삭제</button>
+    </div>
+  </div>`;
+}
+
+function getSubjectFromActRow(el){
+  // walk up to find the sub-panel id
+  let node=el;
+  while(node&&!node.id?.startsWith('se-panel-'))node=node.parentElement;
+  return node?.id?.replace('se-panel-','');
+}
+
+function saveSeFromRow(el){
+  const s=getSubjectFromActRow(el);
+  if(s)saveSeData(s);
+}
+
+function sortAndSaveSeActs(el){
+  const s=getSubjectFromActRow(el);
+  if(!s)return;
+  // save current then re-sort
+  saveSeData(s);
+  const container=document.getElementById('se-acts-'+s);
+  if(!container)return;
+  const acts=getSeActivities(s);
+  acts.sort((a,b)=>actDateVal(a)-actDateVal(b));
+  S.set('se-data-'+s,{
+    achievement:document.getElementById('se-ach-'+s)?.value||'',
+    activities:acts,
+    phrases:document.getElementById('se-phrases-'+s)?.value||''
+  });
+  renderSeActivities(s,acts);
+}
+
+function actDateVal(a){
+  return (parseInt(a.year)||0)*10000+(parseInt(a.month)||0)*100+(parseInt(a.day)||0);
+}
+
+function renderSeActivities(s,acts){
+  const container=document.getElementById('se-acts-'+s);
+  if(!container)return;
+  container.innerHTML='';
+  (acts||[]).forEach(act=>{
+    seActCount++;
+    const uid='seact_'+seActCount;
+    act._uid=uid;
+    container.insertAdjacentHTML('beforeend',makeActivityRowHtml(uid,act));
+  });
+}
+
+function addSeActivity(s){
+  const cfg=S.get('cfg',{year:'2026'});
+  const y=parseInt(cfg.year)||2026;
+  seActCount++;
+  const uid='seact_'+seActCount;
+  const container=document.getElementById('se-acts-'+s);
+  if(!container)return;
+  const act={year:y,month:3,day:1,name:'',desc:'',_uid:uid};
+  container.insertAdjacentHTML('beforeend',makeActivityRowHtml(uid,act));
+  saveSeData(s);
+}
+
+function removeSeActivity(btn,uid){
+  document.getElementById('act-row-'+uid)?.remove();
+  const s=getSubjectFromActRow(btn);
+  if(s)saveSeData(s);
+}
+
+function getSeActivities(s){
+  const container=document.getElementById('se-acts-'+s);
+  if(!container)return[];
+  return Array.from(container.querySelectorAll('.activity-row')).map(row=>{
+    const uid=row.id.replace('act-row-','');
+    return{
+      year:document.getElementById('act-y-'+uid)?.value||'',
+      month:document.getElementById('act-m-'+uid)?.value||'',
+      day:document.getElementById('act-d-'+uid)?.value||'',
+      name:document.getElementById('act-name-'+uid)?.value||'',
+      desc:document.getElementById('act-desc-'+uid)?.value||''
+    };
+  });
 }
 
 function deleteSeSubject(s){
@@ -135,10 +255,12 @@ function deleteSeSubject(s){
 
 function updateSePreview(s){
   const ach=document.getElementById('se-ach-'+s)?.value||'';
-  const act=document.getElementById('se-act-'+s)?.value||'';
+  const acts=getSeActivities(s);
+  const actText=acts.length?acts.map(a=>`  - ${a.year}년 ${a.month}월 ${a.day}일 | ${a.name||'(활동명 없음)'}${a.desc?' | '+a.desc:''}`).join('\n'):'(활동 없음)';
   document.getElementById('se-preview-'+s).textContent=`[세특 문구 생성 요청] 과목: ${s}
 성취기준: ${ach||'(미입력)'}
-활동내용: ${act||'(미입력)'}
+활동 목록:
+${actText}
 
 위 내용 바탕으로 중학교 생활기록부 세특 문구를 카테고리별 5개씩 작성해주세요.
 원칙: 관찰자 시점 / 개조식(~함.~보임.) / 주어 없이 / 긍정적 표현만
@@ -167,11 +289,12 @@ function switchChTab(type){
 
 function renderChPanel(type){
   const panelsEl=document.getElementById('chPanels');
-  const data=S.get('ch-data-'+type,{activities:'',phrases:''});
+  const data=S.get('ch-data-'+type,{activities:[],phrases:''});
   panelsEl.innerHTML=`
-    <div style="margin-bottom:14px;">
-      <label>활동 목록 (날짜 + 활동명, 한 줄씩)</label>
-      <textarea id="ch-acts-${type}" placeholder="예:&#10;4/15 학급 자치회의&#10;5/20 환경 캠페인&#10;6/3 독서의날&#10;6/17 학급 특색활동" oninput="saveChData('${type}')">${esc(data.activities)}</textarea>
+    <div style="margin-bottom:10px;">
+      <label style="margin-bottom:8px;display:block;">활동 목록 <span style="font-size:10px;color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0;">날짜순 자동 정렬</span></label>
+      <div class="activity-list" id="ch-acts-${type}"></div>
+      <button class="add-activity-btn" onclick="addChActivity('${type}')">+ 활동 추가</button>
     </div>
     <div class="ai-box">
       <div class="ai-box-title">🤖 AI용 텍스트</div>
@@ -189,20 +312,126 @@ function renderChPanel(type){
         <span class="phrase-count-badge" id="ch-count-${type}">0개</span>
       </div>
       <div class="phrase-hint">형식: <code>[카테고리] 문장내용</code> 으로 한 줄씩</div>
+      <div class="format-btn-row">
+        <button class="btn btn-ghost" style="font-size:11px;padding:5px 12px;" onclick="formatPhrases('ch-phrases-${type}','ch-count-${type}','${type}','ch')">✨ 형식 정리</button>
+        <span style="font-size:11px;color:var(--text-muted);">AI에서 받은 문구를 붙여넣고 형식 정리 버튼을 클릭하세요</span>
+      </div>
       <textarea id="ch-phrases-${type}" placeholder="AI에게 받은 문구를 붙여넣으세요..." oninput="saveChData('${type}')" style="min-height:160px;">${esc(data.phrases)}</textarea>
     </div>`;
+  // render activity rows
+  renderChActivities(type, data.activities||[]);
   updateCount('ch-phrases-'+type,'ch-count-'+type);
 }
 
 function saveChData(type){
-  S.set('ch-data-'+type,{activities:document.getElementById('ch-acts-'+type)?.value||'',phrases:document.getElementById('ch-phrases-'+type)?.value||''});
+  S.set('ch-data-'+type,{activities:getChActivities(type),phrases:document.getElementById('ch-phrases-'+type)?.value||''});
   updateCount('ch-phrases-'+type,'ch-count-'+type);
 }
 
+// ── 활동 행 UI (창체) ──
+let chActCount=0;
+function makeChActivityRowHtml(uid,act){
+  const cfg=S.get('cfg',{year:'2026'});
+  const currentYear=parseInt(cfg.year)||2026;
+  const years=[currentYear-1,currentYear,currentYear+1];
+  const yearOpts=years.map(y=>`<option value="${y}" ${act.year==y?'selected':''}>${y}년</option>`).join('');
+  const months=Array.from({length:12},(_,i)=>i+1).map(m=>`<option value="${m}" ${act.month==m?'selected':''}>${m}월</option>`).join('');
+  const days=Array.from({length:31},(_,i)=>i+1).map(d=>`<option value="${d}" ${act.day==d?'selected':''}>${d}일</option>`).join('');
+  return `<div class="activity-row" id="chact-row-${uid}">
+    <div class="act-date-col">
+      <label>날짜</label>
+      <div class="activity-date-inputs">
+        <select id="chact-y-${uid}" onchange="sortAndSaveChActs(this)" data-uid="${uid}">${yearOpts}</select>
+        <select id="chact-m-${uid}" onchange="sortAndSaveChActs(this)" data-uid="${uid}">${months}</select>
+        <select id="chact-d-${uid}" onchange="sortAndSaveChActs(this)" data-uid="${uid}">${days}</select>
+      </div>
+    </div>
+    <div>
+      <label>활동명</label>
+      <input type="text" id="chact-name-${uid}" value="${esc(act.name||'')}" placeholder="예: 학급 자치회의" oninput="saveChFromRow(this)">
+    </div>
+    <div>
+      <label>활동설명 <span style="font-size:10px;color:var(--text-muted);text-transform:none;font-weight:400;">(선택)</span></label>
+      <textarea id="chact-desc-${uid}" placeholder="AI 맥락 파악용 설명..." oninput="saveChFromRow(this)">${esc(act.desc||'')}</textarea>
+    </div>
+    <div class="act-del-col" style="padding-top:20px;">
+      <button class="btn btn-danger" style="font-size:11px;padding:5px 10px;white-space:nowrap;" onclick="removeChActivity(this,'${uid}')">삭제</button>
+    </div>
+  </div>`;
+}
+
+function getChTypeFromActRow(el){
+  let node=el;
+  while(node&&!node.id?.startsWith('ch-acts-'))node=node.parentElement;
+  return node?.id?.replace('ch-acts-','');
+}
+
+function saveChFromRow(el){
+  const type=getChTypeFromActRow(el);
+  if(type)saveChData(type);
+}
+
+function sortAndSaveChActs(el){
+  const type=getChTypeFromActRow(el);
+  if(!type)return;
+  saveChData(type);
+  const acts=getChActivities(type);
+  acts.sort((a,b)=>actDateVal(a)-actDateVal(b));
+  S.set('ch-data-'+type,{activities:acts,phrases:document.getElementById('ch-phrases-'+type)?.value||''});
+  renderChActivities(type,acts);
+}
+
+function renderChActivities(type,acts){
+  const container=document.getElementById('ch-acts-'+type);
+  if(!container)return;
+  container.innerHTML='';
+  (acts||[]).forEach(act=>{
+    chActCount++;
+    const uid='chact_'+chActCount;
+    act._uid=uid;
+    container.insertAdjacentHTML('beforeend',makeChActivityRowHtml(uid,act));
+  });
+}
+
+function addChActivity(type){
+  const cfg=S.get('cfg',{year:'2026'});
+  const y=parseInt(cfg.year)||2026;
+  chActCount++;
+  const uid='chact_'+chActCount;
+  const container=document.getElementById('ch-acts-'+type);
+  if(!container)return;
+  const act={year:y,month:3,day:1,name:'',desc:'',_uid:uid};
+  container.insertAdjacentHTML('beforeend',makeChActivityRowHtml(uid,act));
+  saveChData(type);
+}
+
+function removeChActivity(btn,uid){
+  document.getElementById('chact-row-'+uid)?.remove();
+  const type=getChTypeFromActRow(btn);
+  if(type)saveChData(type);
+}
+
+function getChActivities(type){
+  const container=document.getElementById('ch-acts-'+type);
+  if(!container)return[];
+  return Array.from(container.querySelectorAll('.activity-row')).map(row=>{
+    const uid=row.id.replace('chact-row-','');
+    return{
+      year:document.getElementById('chact-y-'+uid)?.value||'',
+      month:document.getElementById('chact-m-'+uid)?.value||'',
+      day:document.getElementById('chact-d-'+uid)?.value||'',
+      name:document.getElementById('chact-name-'+uid)?.value||'',
+      desc:document.getElementById('chact-desc-'+uid)?.value||''
+    };
+  });
+}
+
 function updateChPreview(type){
-  const acts=document.getElementById('ch-acts-'+type)?.value||'';
+  const acts=getChActivities(type);
+  const actText=acts.length?acts.map(a=>`  - ${a.year}년 ${a.month}월 ${a.day}일 | ${a.name||'(활동명 없음)'}${a.desc?' | '+a.desc:''}`).join('\n'):'(활동 없음)';
   document.getElementById('ch-preview-'+type).textContent=`[창체 ${type}활동 문구 생성 요청]
-활동 목록:\n${acts||'(미입력)'}
+활동 목록:
+${actText}
 
 위 활동 바탕으로 창체 특기사항 문구를 카테고리별 5개씩 작성해주세요.
 원칙: 관찰자 시점 / 개조식(~함.~보임.) / 주어 없이 / 긍정적 / 2~3문장
@@ -505,7 +734,89 @@ function exportExcel(){
   showToast('다운로드 시작!');
 }
 
-// ── 유틸 ──
+// ── 학생 자동 생성 ──
+function autoGenStudents(){
+  const classNum=parseInt(document.getElementById('autogen-classnum')?.value)||0;
+  const count=parseInt(document.getElementById('autogen-count')?.value)||0;
+  if(!classNum||classNum<1||classNum>20)return showToast('반 번호를 1~20 사이로 입력해주세요!');
+  if(!count||count<1||count>50)return showToast('인원수를 1~50 사이로 입력해주세요!');
+  const cfg=S.get('cfg',{grade:'1'});
+  const grade=parseInt(cfg.grade)||1;
+  // 해당 반 패널이 있는지 확인 (반 이름이 "N반"인 패널)
+  let targetId=null;
+  document.querySelectorAll('.class-panel').forEach(p=>{
+    const cid=p.id.replace('cpanel_','');
+    const name=document.getElementById('cname_'+cid)?.value||'';
+    if(name===classNum+'반')targetId=cid;
+  });
+  if(!targetId){
+    // 새로 반 추가
+    targetId=addClass(classNum+'반');
+    // 기존 자동생성된 5명 삭제
+    const rows=document.getElementById('srows_'+targetId);
+    if(rows)rows.innerHTML='';
+  } else {
+    switchClass(targetId);
+    if(!confirm(`기존 "${classNum}반" 학생 목록을 초기화하고 자동생성할까요?`))return;
+    const rows=document.getElementById('srows_'+targetId);
+    if(rows)rows.innerHTML='';
+  }
+  // 학번 형식: 학년+반(2자리)+번호(2자리) → 예: 1학년 1반 1번 → 10101
+  for(let i=1;i<=count;i++){
+    const studentId=`${grade}${String(classNum).padStart(2,'0')}${String(i).padStart(2,'0')}`;
+    sCount++;
+    const sid='s_'+sCount;
+    const rows=document.getElementById('srows_'+targetId);
+    if(!rows)continue;
+    const rn=rows.children.length+1;
+    const div=document.createElement('div');
+    div.className='student-row';div.id=sid;
+    div.innerHTML=`
+      <span class="s-num">${rn}</span>
+      <div><input type="text" placeholder="학번" id="${sid}_id" value="${studentId}" onblur="saveClasses()"></div>
+      <div><select id="${sid}_g" onchange="saveClasses()"><option value="남학생">남학생</option><option value="여학생">여학생</option></select></div>
+      <div class="s-pnum"><input type="text" placeholder="학생개인번호 (선택)" id="${sid}_pnum" onblur="saveClasses()"></div>
+      <button class="btn btn-danger" style="font-size:11px;padding:4px 8px;" onclick="removeStudent('${sid}','${targetId}')">삭제</button>`;
+    rows.appendChild(div);
+  }
+  saveClasses();
+  showToast(`${classNum}반 ${count}명 생성 완료! (${grade}학년 기준)`);
+}
+
+// ── 문구 형식 정리 ──
+function formatPhrases(textareaId, countId, key, type){
+  const ta=document.getElementById(textareaId);
+  if(!ta)return;
+  const raw=ta.value;
+  if(!raw.trim())return showToast('문구를 먼저 붙여넣어 주세요!');
+  const lines=raw.split('\n');
+  const result=[];
+  let currentCat=null;
+  lines.forEach(line=>{
+    const trimmed=line.trim();
+    if(!trimmed)return;
+    // 카테고리 줄인지 확인: [카테고리] 로만 된 줄 OR [카테고리] 뒤에 내용이 있는 줄
+    const catOnly=/^\[([^\]]+)\]\s*$/.exec(trimmed);
+    const catWithContent=/^\[([^\]]+)\]\s+(.+)$/.exec(trimmed);
+    if(catOnly){
+      currentCat=catOnly[1];
+    } else if(catWithContent){
+      currentCat=catWithContent[1];
+      result.push(`[${currentCat}] ${catWithContent[2]}`);
+    } else if(currentCat&&trimmed){
+      result.push(`[${currentCat}] ${trimmed}`);
+    }
+  });
+  if(!result.length)return showToast('정리할 문구를 찾지 못했어요. 형식을 확인해주세요.');
+  ta.value=result.join('\n');
+  // save
+  if(type==='se')saveSeData(key);
+  else saveChData(key);
+  updateCount(textareaId,countId);
+  showToast(`${result.length}개 문구 정리 완료!`);
+}
+
+
 function calcBytes(s){let b=0;for(let i=0;i<s.length;i++)b+=s.charCodeAt(i)>127?3:1;return b;}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function updateCount(inputId,countId){
@@ -527,6 +838,25 @@ window.onload=()=>{
   loadSetting();
   loadClasses();
   const subjects=S.get('se-subjects',[]);
-  if(subjects.length){activeSeSubject=subjects[0];renderSeSubjects();}
+  if(subjects.length){
+    // 마이그레이션: 기존 activity 문자열 → activities 배열
+    subjects.forEach(s=>{
+      const d=S.get('se-data-'+s,{});
+      if(d.activity!==undefined&&!d.activities){
+        d.activities=d.activity?d.activity.split('\n').filter(l=>l.trim()).map(l=>({year:'',month:'',day:'',name:l.trim(),desc:''})):[];
+        delete d.activity;
+        S.set('se-data-'+s,d);
+      }
+    });
+    activeSeSubject=subjects[0];renderSeSubjects();
+  }
+  // 창체 마이그레이션: activities 문자열 → 배열
+  ['자율','진로','동아리'].forEach(type=>{
+    const d=S.get('ch-data-'+type,{});
+    if(typeof d.activities==='string'){
+      d.activities=d.activities?d.activities.split('\n').filter(l=>l.trim()).map(l=>({year:'',month:'',day:'',name:l.trim(),desc:''})):[];
+      S.set('ch-data-'+type,d);
+    }
+  });
   renderChPanel('자율');
 };
