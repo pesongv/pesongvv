@@ -589,6 +589,83 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.7; }
   margin-bottom: 24px;
 }
 
+/* 활동 행 UI */
+.activity-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.activity-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 1fr auto;
+  gap: 8px;
+  align-items: start;
+  background: rgba(15,23,42,0.5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  transition: border-color 0.2s;
+}
+.activity-row:hover { border-color: rgba(45,212,191,0.2); }
+.activity-row label { font-size: 10px; margin-bottom: 4px; }
+.add-activity-btn {
+  width: 100%;
+  padding: 9px;
+  font-size: 12px;
+  font-weight: 600;
+  background: none;
+  border: 1px dashed rgba(45,212,191,0.25);
+  border-radius: var(--radius-sm);
+  color: var(--mint);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.add-activity-btn:hover { background: var(--mint-glow); }
+.activity-date-inputs { display: flex; gap: 4px; align-items: center; }
+.activity-date-inputs select {
+  padding: 6px 4px;
+  font-size: 12px;
+  width: auto;
+  min-width: 0;
+}
+.activity-date-inputs select:nth-child(1) { flex: 2; }
+.activity-date-inputs select:nth-child(2) { flex: 1.2; }
+.activity-date-inputs select:nth-child(3) { flex: 1.2; }
+.activity-row input[type=text] { padding: 7px 10px; font-size: 12px; }
+.activity-row textarea { min-height: 52px; font-size: 12px; padding: 7px 10px; resize: vertical; }
+
+/* 학생 자동생성 박스 */
+.auto-gen-box {
+  background: rgba(45,212,191,0.04);
+  border: 1px solid rgba(45,212,191,0.18);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.auto-gen-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mint);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.auto-gen-inputs {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.auto-gen-inputs > div { flex: 1; min-width: 60px; }
+.auto-gen-inputs label { font-size: 10px; margin-bottom: 4px; }
+.auto-gen-inputs input { padding: 8px 10px; font-size: 13px; }
+
+/* 형식 정리 버튼 영역 */
+.format-btn-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
 /* 스크롤바 */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -602,6 +679,9 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.7; }
   .student-row { grid-template-columns: 24px 1fr 80px auto; }
   .student-row .s-pnum { display: none; }
   .trait-grid { grid-template-columns: 1fr 1fr; }
+  .activity-row { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; }
+  .activity-row > .act-date-col { grid-column: 1 / -1; }
+  .activity-row > .act-del-col { grid-column: 2; grid-row: 2; display: flex; align-items: flex-end; justify-content: flex-end; }
 }
 </style>
 </head>
@@ -678,6 +758,21 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.7; }
       <div class="card-title-icon icon-mint">👥</div>
       반별 학생 목록
       <button class="class-add-tab" onclick="addClass()" style="margin-left:auto;">+ 반 추가</button>
+    </div>
+    <div class="auto-gen-box">
+      <div class="auto-gen-title">⚡ 학생 자동 생성</div>
+      <div class="auto-gen-inputs">
+        <div>
+          <label>반 번호</label>
+          <input type="number" id="autogen-classnum" placeholder="예: 1" min="1" max="20" style="width:100%;">
+        </div>
+        <div>
+          <label>인원수</label>
+          <input type="number" id="autogen-count" placeholder="예: 28" min="1" max="50" style="width:100%;">
+        </div>
+        <button class="btn btn-mint" onclick="autoGenStudents()" style="white-space:nowrap;align-self:flex-end;">자동 생성</button>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">💡 설정의 학년 + 입력한 반 + 번호로 학번을 자동 생성해요. (예: 1학년 1반 → 10101~)</div>
     </div>
     <div class="class-tabs" id="classTabBar"></div>
     <div id="classPanels"></div>
