@@ -459,7 +459,7 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
 .student-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
 .student-row {
   display: grid;
-  grid-template-columns: 24px 140px 90px 60px auto;
+  grid-template-columns: 24px 140px 90px auto;
   gap: 8px; align-items: center;
   background: var(--bg); border: 1px solid var(--border);
   border-radius: var(--radius-xs); padding: 8px 12px;
@@ -624,13 +624,14 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
           <div class="result-class-sel">
             <div style="flex:1;">
               <label>반 선택</label>
-              <select id="se-result-class" onchange="seRenderCombine()"></select>
+              <select id="se-result-class" onchange="seLoadGradeList()"></select>
             </div>
             <div style="flex:1;">
               <label>과목</label>
               <select id="se-result-subject" onchange="seRenderCombine()"></select>
             </div>
           </div>
+          <div id="se-grade-list" style="margin-bottom:12px;"></div>
           <button class="btn btn-dark btn-full" onclick="seCombine()" style="margin-bottom:12px;">✨ 조합하기</button>
           <div id="se-combine-results"><div class="empty"><div class="empty-icon">📝</div>반과 과목을 선택 후<br>조합하기를 눌러주세요.</div></div>
           <div id="se-export-box" style="display:none;margin-top:12px;">
