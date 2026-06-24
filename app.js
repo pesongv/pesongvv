@@ -308,9 +308,17 @@ function copySeAiText(s){
 }
 
 // ── 활동명 연결어 ──
-const ACT_CONNECTORS=['에서','을 통해','를 통해','에 참여하여','활동에서','을 마치며','를 마치며','시간을 통해'];
+function hasBatchim(str){
+  const code=str.charCodeAt(str.length-1);
+  if(code<0xAC00||code>0xD7A3)return false;
+  return (code-0xAC00)%28!==0;
+}
 function actPrefix(name){
-  const c=ACT_CONNECTORS[Math.floor(Math.random()*ACT_CONNECTORS.length)];
+  const batchim=hasBatchim(name);
+  const connectors=batchim
+    ?['에서','을 통해','에 참여하여','활동에서','을 마치며','시간을 통해']
+    :['에서','를 통해','에 참여하여','활동에서','를 마치며','시간을 통해'];
+  const c=connectors[Math.floor(Math.random()*connectors.length)];
   return name+c+' ';
 }
 
