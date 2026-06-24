@@ -1041,7 +1041,65 @@ function clearAll(){
   setTimeout(()=>location.reload(),800);
 }
 
-window.onload=()=>{
+// ══════════════════════
+// 가이드 모달
+// ══════════════════════
+const guideState={};
+
+function openGuide(id){
+  const overlay=document.getElementById('guide-'+id);
+  if(!overlay)return;
+  overlay.classList.add('active');
+  if(!guideState[id])guideState[id]=0;
+  renderSlide(id);
+  // 배경 클릭으로 닫기
+  overlay.onclick=(e)=>{if(e.target===overlay)closeGuide(id);};
+}
+
+function closeGuide(id){
+  document.getElementById('guide-'+id)?.classList.remove('active');
+}
+
+function renderSlide(id){
+  const slides=document.querySelectorAll(`#slides-${id} .modal-slide`);
+  const dots=document.getElementById('dots-'+id);
+  const cur=guideState[id]||0;
+  slides.forEach((s,i)=>s.classList.toggle('active',i===cur));
+  if(dots){
+    dots.innerHTML='';
+    slides.forEach((_,i)=>{
+      const d=document.createElement('div');
+      d.className='slide-dot'+(i===cur?' active':'');
+      d.onclick=()=>{guideState[id]=i;renderSlide(id);};
+      dots.appendChild(d);
+    });
+  }
+  // 마지막 슬라이드면 버튼 텍스트 변경
+  const nextBtn=document.querySelector(`#guide-${id} .modal-nav .btn-dark`);
+  if(nextBtn)nextBtn.textContent=cur===slides.length-1?'완료 ✓':'다음 →';
+}
+
+function nextSlide(id){
+  const slides=document.querySelectorAll(`#slides-${id} .modal-slide`);
+  if(guideState[id]===slides.length-1){closeGuide(id);return;}
+  guideState[id]=(guideState[id]||0)+1;
+  renderSlide(id);
+}
+
+function prevSlide(id){
+  if((guideState[id]||0)===0)return;
+  guideState[id]--;
+  renderSlide(id);
+}
+
+// ESC 키로 닫기
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    ['se','ch','student'].forEach(id=>closeGuide(id));
+  }
+});
+
+
   loadSetting();
   loadClasses();
   const subjects=S.get('se-subjects',[]);
