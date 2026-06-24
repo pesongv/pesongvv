@@ -3,685 +3,525 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>기록부 메이커</title>
+<title>생활기록부 작성 메이커</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
-  --navy: #0f172a;
-  --navy-2: #1e293b;
-  --navy-3: #334155;
-  --mint: #2dd4bf;
-  --mint-dim: #0d9488;
-  --mint-glow: rgba(45,212,191,0.12);
-  --slate: #64748b;
-  --slate-light: #94a3b8;
-  --border: rgba(255,255,255,0.08);
-  --border-hover: rgba(45,212,191,0.3);
-  --text: #f1f5f9;
-  --text-dim: #94a3b8;
-  --text-muted: #64748b;
-  --card: rgba(30,41,59,0.8);
-  --card-hover: rgba(30,41,59,1);
-  --green: #34d399;
-  --red: #f87171;
-  --amber: #fbbf24;
+  --bg: #f4f4f2;
+  --bg-card: #ffffff;
+  --bg-input: #f8f8f7;
+  --bg-hover: #f1f1ef;
+  --border: #e5e5e3;
+  --border-strong: #d0d0cc;
+  --text: #1a1a18;
+  --text-2: #4a4a46;
+  --text-3: #8a8a85;
+  --accent: #1a1a18;
+  --accent-soft: #f0f0ee;
+  --red: #d44;
+  --red-soft: #fff0f0;
+  --green: #2a7a4a;
+  --green-soft: #edf7f1;
+  --amber: #c47c00;
+  --amber-soft: #fff8e6;
+  --blue: #1a5cb8;
+  --blue-soft: #eef4ff;
   --radius: 12px;
   --radius-sm: 8px;
+  --radius-xs: 6px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
-  background: var(--navy);
+  background: var(--bg);
   color: var(--text);
   font-size: 14px;
   min-height: 100vh;
 }
 
-/* 배경 그라디언트 */
-body::before {
-  content: '';
-  position: fixed; inset: 0; z-index: -1;
-  background:
-    radial-gradient(ellipse 80% 40% at 20% 0%, rgba(45,212,191,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 80% 100%, rgba(99,102,241,0.06) 0%, transparent 60%),
-    var(--navy);
-}
-
-/* 헤더 */
+/* ── 헤더 ── */
 .header {
-  padding: 0 32px;
-  height: 60px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+  height: 56px;
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px solid var(--border);
-  background: rgba(15,23,42,0.9);
-  backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: var(--shadow);
 }
-.header-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+.header-logo { display: flex; align-items: center; gap: 10px; }
 .logo-mark {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, var(--mint), #6366f1);
+  width: 30px; height: 30px;
+  background: var(--accent);
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
 }
-.header h1 {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: -0.3px;
-}
-.header-badge {
+.header h1 { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+.header-free {
   margin-left: auto;
-  font-size: 11px;
-  color: var(--mint);
-  background: var(--mint-glow);
-  border: 1px solid rgba(45,212,191,0.2);
+  font-size: 11px; font-weight: 600;
+  color: var(--text-3);
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
   padding: 3px 10px;
   border-radius: 20px;
-  font-weight: 500;
 }
 
-/* 메인 탭 */
-.nav {
-  padding: 0 32px;
-  display: flex;
-  gap: 2px;
+/* ── 히어로 ── */
+.hero {
+  background: var(--bg-card);
   border-bottom: 1px solid var(--border);
-  background: rgba(15,23,42,0.6);
-  backdrop-filter: blur(8px);
+  padding: 40px 40px 32px;
+}
+.hero-inner { max-width: 1100px; margin: 0 auto; }
+.hero-eyebrow {
+  font-size: 11px; font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 10px;
+}
+.hero-title {
+  font-size: 36px; font-weight: 900;
+  color: var(--text);
+  letter-spacing: -1px;
+  line-height: 1.15;
+  margin-bottom: 10px;
+}
+.hero-desc { font-size: 14px; color: var(--text-2); line-height: 1.7; margin-bottom: 28px; }
+
+/* ── 사용법 배너 ── */
+.how-banner {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.how-step {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  position: relative;
+}
+.how-step-num {
+  font-size: 10px; font-weight: 800;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+.how-step-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.how-step-desc { font-size: 11px; color: var(--text-3); line-height: 1.6; }
+.how-arrow {
+  position: absolute; right: -8px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px; color: var(--border-strong);
+  z-index: 1;
+}
+
+/* ── 네비 ── */
+.nav {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+  display: flex;
+  gap: 0;
   position: sticky;
-  top: 60px;
+  top: 56px;
   z-index: 99;
   overflow-x: auto;
 }
 .nav::-webkit-scrollbar { height: 0; }
 .nav-tab {
-  padding: 14px 20px;
-  font-size: 13px;
-  font-weight: 500;
-  border: none;
-  background: none;
+  padding: 13px 18px;
+  font-size: 13px; font-weight: 500;
+  border: none; background: none;
   cursor: pointer;
-  color: var(--text-muted);
+  color: var(--text-3);
   font-family: inherit;
   white-space: nowrap;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  transition: all 0.15s;
+  display: flex; align-items: center; gap: 6px;
 }
-.nav-tab:hover { color: var(--text-dim); }
-.nav-tab.active {
-  color: var(--mint);
-  border-bottom-color: var(--mint);
-  font-weight: 600;
-}
+.nav-tab:hover { color: var(--text); background: var(--bg-hover); }
+.nav-tab.active { color: var(--text); border-bottom-color: var(--text); font-weight: 600; }
 
-/* 탭 컨텐츠 */
-.tab-content { display: none; padding: 28px 32px; max-width: 1000px; margin: 0 auto; }
+/* ── 탭 컨텐츠 ── */
+.tab-content { display: none; padding: 28px 40px; max-width: 1100px; margin: 0 auto; }
 .tab-content.active { display: block; }
 
-/* 카드 */
+/* 좌우 분할 레이아웃 */
+.split-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.split-left, .split-right {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.split-right-sticky {
+  position: sticky;
+  top: 112px;
+  max-height: calc(100vh - 130px);
+  overflow-y: auto;
+}
+.split-right-sticky::-webkit-scrollbar { width: 3px; }
+.split-right-sticky::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+
+/* ── 카드 ── */
 .card {
-  background: var(--card);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 24px;
-  margin-bottom: 16px;
-  transition: border-color 0.2s;
-  backdrop-filter: blur(8px);
+  padding: 20px;
+  box-shadow: var(--shadow);
 }
-.card:hover { border-color: rgba(255,255,255,0.12); }
 .card-title {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 13px; font-weight: 700;
   color: var(--text);
-  margin-bottom: 18px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
 }
-.card-title-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  flex-shrink: 0;
+.card-icon {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
 }
-.icon-blue { background: rgba(99,102,241,0.2); }
-.icon-mint { background: rgba(45,212,191,0.2); }
-.icon-amber { background: rgba(251,191,36,0.2); }
-.icon-green { background: rgba(52,211,153,0.2); }
-.card-desc { font-size: 12px; color: var(--text-muted); font-weight: 400; margin-left: 4px; }
+.icon-dark { background: var(--accent); }
+.icon-gray { background: var(--bg-hover); border: 1px solid var(--border); }
+.icon-green { background: var(--green-soft); }
+.icon-blue { background: var(--blue-soft); }
+.icon-amber { background: var(--amber-soft); }
 
-/* 입력 */
-label {
-  display: block;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
-  margin-bottom: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-input[type=text], input[type=number], select, textarea {
-  width: 100%;
-  padding: 10px 12px;
-  font-size: 13px;
-  background: rgba(15,23,42,0.6);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  font-family: inherit;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-input::placeholder, textarea::placeholder { color: var(--text-muted); }
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: var(--mint);
-  box-shadow: 0 0 0 3px var(--mint-glow);
-}
-select option { background: var(--navy-2); color: var(--text); }
-textarea { resize: vertical; min-height: 100px; line-height: 1.7; }
-
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-.grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
-
-/* 서브탭 */
-.sub-tabs {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
+/* ── 서브탭 ── */
+.sub-tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
 .sub-tab {
-  padding: 6px 14px;
-  font-size: 12px;
-  font-weight: 600;
-  background: rgba(255,255,255,0.04);
+  padding: 5px 12px;
+  font-size: 12px; font-weight: 600;
+  background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 20px;
-  cursor: pointer;
-  color: var(--text-muted);
-  font-family: inherit;
-  transition: all 0.2s;
+  cursor: pointer; color: var(--text-3);
+  font-family: inherit; transition: all 0.15s;
 }
-.sub-tab:hover { color: var(--text-dim); border-color: rgba(255,255,255,0.15); }
-.sub-tab.active {
-  background: var(--mint-glow);
-  color: var(--mint);
-  border-color: rgba(45,212,191,0.3);
-}
+.sub-tab:hover { color: var(--text); border-color: var(--border-strong); }
+.sub-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 .sub-panel { display: none; }
 .sub-panel.active { display: block; }
 
-/* AI 박스 */
+/* ── 입력 ── */
+label {
+  display: block;
+  font-size: 11px; font-weight: 600;
+  color: var(--text-3);
+  margin-bottom: 5px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+input[type=text], input[type=number], select, textarea {
+  width: 100%;
+  padding: 9px 11px;
+  font-size: 13px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text);
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+input::placeholder, textarea::placeholder { color: var(--text-3); }
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(26,26,24,0.08);
+  background: #fff;
+}
+select option { background: #fff; color: var(--text); }
+textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+/* ── 버튼 ── */
+.btn {
+  padding: 8px 14px;
+  font-size: 12px; font-weight: 600;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--bg-card); color: var(--text-2);
+}
+.btn:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+.btn-dark { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-dark:hover { background: #333; border-color: #333; }
+.btn-danger { background: var(--red-soft); color: var(--red); border-color: #fcc; }
+.btn-danger:hover { background: #ffe0e0; }
+.btn-green { background: var(--green-soft); color: var(--green); border-color: #c5e8d4; }
+.btn-green:hover { background: #d8f0e4; }
+.btn-full { width: 100%; justify-content: center; padding: 11px; font-size: 13px; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ── 활동 행 (세특 — 날짜 없음) ── */
+.activity-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.se-act-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  align-items: start;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 10px;
+}
+.se-act-row:hover { border-color: var(--border-strong); }
+.se-act-row label { font-size: 10px; margin-bottom: 3px; }
+.se-act-row input[type=text], .se-act-row textarea { font-size: 12px; padding: 6px 9px; }
+.se-act-row textarea { min-height: 46px; }
+
+/* ── 활동 행 (창체 — 날짜 있음) ── */
+.ch-act-row {
+  display: grid;
+  grid-template-columns: 145px 1fr 1fr auto;
+  gap: 8px;
+  align-items: start;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 10px;
+}
+.ch-act-row:hover { border-color: var(--border-strong); }
+.ch-act-row label { font-size: 10px; margin-bottom: 3px; }
+.ch-act-row input[type=text], .ch-act-row textarea { font-size: 12px; padding: 6px 9px; }
+.ch-act-row textarea { min-height: 46px; }
+.date-selects { display: flex; gap: 3px; }
+.date-selects select { padding: 6px 4px; font-size: 11px; flex: 1; min-width: 0; }
+
+.add-row-btn {
+  width: 100%;
+  padding: 8px;
+  font-size: 12px; font-weight: 600;
+  background: none;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-xs);
+  color: var(--text-3);
+  cursor: pointer;
+  font-family: inherit; transition: all 0.15s;
+  margin-top: 2px;
+}
+.add-row-btn:hover { background: var(--bg-hover); color: var(--text); }
+
+/* ── AI 박스 ── */
 .ai-box {
-  background: rgba(45,212,191,0.04);
-  border: 1px solid rgba(45,212,191,0.2);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 14px;
+}
+.ai-box-title { font-size: 11px; font-weight: 700; color: var(--text-3); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+.ai-preview {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 10px;
+  font-size: 11px; color: var(--text-3);
+  line-height: 1.8;
+  max-height: 110px; overflow-y: auto;
+  margin-bottom: 10px;
+  white-space: pre-wrap;
+  font-family: monospace;
+}
+
+/* ── 문구 뱅크 ── */
+.phrase-bank {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 14px;
+}
+.phrase-bank-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.phrase-bank-title { font-size: 11px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.5px; }
+.phrase-badge {
+  font-size: 10px; font-weight: 600;
+  background: var(--accent); color: #fff;
+  padding: 2px 7px; border-radius: 10px;
+}
+.phrase-hint { font-size: 11px; color: var(--text-3); margin-bottom: 8px; line-height: 1.6; }
+.phrase-hint code { background: var(--bg-card); border: 1px solid var(--border); padding: 1px 5px; border-radius: 4px; color: var(--text-2); font-size: 11px; }
+.format-row { display: flex; gap: 6px; align-items: center; margin-bottom: 7px; flex-wrap: wrap; }
+
+/* ── 구분선 ── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+/* ── 결과 패널 ── */
+.result-header-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 14px;
+}
+.result-title { font-size: 13px; font-weight: 700; color: var(--text); }
+.result-class-sel { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+.result-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+.result-card-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.result-sid { font-size: 12px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px; }
+.byte-chip { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; font-family: monospace; }
+.byte-ok { background: var(--green-soft); color: var(--green); border: 1px solid #c5e8d4; }
+.byte-warn { background: var(--amber-soft); color: var(--amber); border: 1px solid #fce3a0; }
+.byte-over { background: var(--red-soft); color: var(--red); border: 1px solid #fcc; }
+.result-text {
+  font-size: 12px; line-height: 1.9;
+  color: var(--text-2);
+  white-space: pre-wrap;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  padding: 2px 4px;
+}
+.result-text[contenteditable=true] {
+  background: #fff;
+  border-color: var(--accent);
+  outline: none;
+  padding: 6px 8px;
+}
+.result-actions { display: flex; gap: 5px; margin-top: 8px; }
+
+/* ── 내보내기 ── */
+.export-box {
+  background: var(--green-soft);
+  border: 1px solid #c5e8d4;
   border-radius: var(--radius-sm);
   padding: 16px;
-  margin-top: 16px;
 }
-.ai-box-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--mint);
-  margin-bottom: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.ai-prompt-preview {
-  background: rgba(15,23,42,0.6);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 12px;
-  font-size: 11px;
-  color: var(--text-muted);
-  line-height: 1.8;
-  max-height: 120px;
-  overflow-y: auto;
-  margin-bottom: 12px;
-  white-space: pre-wrap;
-  font-family: 'SF Mono', 'Fira Code', monospace;
-}
-.ai-hint {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
+.export-title { font-size: 12px; font-weight: 700; color: var(--green); margin-bottom: 12px; }
 
-/* 문구 뱅크 */
-.phrase-bank {
-  background: rgba(15,23,42,0.4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 14px;
-  margin-top: 16px;
-}
-.phrase-bank-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-.phrase-bank-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.phrase-count-badge {
-  font-size: 10px;
-  font-weight: 600;
-  background: var(--mint-glow);
-  color: var(--mint);
-  border: 1px solid rgba(45,212,191,0.2);
-  padding: 2px 8px;
-  border-radius: 10px;
-}
-.phrase-hint {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-  line-height: 1.6;
-}
-.phrase-hint code {
-  background: rgba(255,255,255,0.06);
-  padding: 1px 6px;
-  border-radius: 4px;
-  color: var(--mint);
-  font-size: 11px;
-}
-
-/* 버튼 */
-.btn {
-  padding: 9px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  border: none;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.btn-mint {
-  background: var(--mint);
-  color: var(--navy);
-}
-.btn-mint:hover { background: #5eead4; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(45,212,191,0.3); }
-.btn-ghost {
-  background: rgba(255,255,255,0.06);
-  color: var(--text-dim);
-  border: 1px solid var(--border);
-}
-.btn-ghost:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.15); }
-.btn-danger {
-  background: rgba(248,113,113,0.1);
-  color: var(--red);
-  border: 1px solid rgba(248,113,113,0.2);
-}
-.btn-danger:hover { background: rgba(248,113,113,0.15); }
-.btn-green-soft {
-  background: rgba(52,211,153,0.1);
-  color: var(--green);
-  border: 1px solid rgba(52,211,153,0.2);
-}
-.btn-green-soft:hover { background: rgba(52,211,153,0.15); }
-.btn-full { width: 100%; justify-content: center; padding: 12px; font-size: 14px; }
-.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
-
-.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
-
-/* 클래스 탭 */
-.class-tabs {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--border);
-  align-items: center;
-}
+/* ── 학생관리 ── */
+.class-tabs { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border); align-items: center; }
 .class-tab-btn {
-  padding: 7px 16px;
-  font-size: 12px;
-  font-weight: 600;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  cursor: pointer;
-  color: var(--text-muted);
-  font-family: inherit;
-  transition: all 0.2s;
-}
-.class-tab-btn.active {
-  background: rgba(99,102,241,0.15);
-  color: #a5b4fc;
-  border-color: rgba(99,102,241,0.3);
-}
-.class-tab-btn:hover:not(.active) { color: var(--text-dim); }
-.class-add-tab {
   padding: 6px 14px;
-  font-size: 12px;
-  font-weight: 600;
-  background: none;
-  border: 1px dashed rgba(45,212,191,0.3);
-  border-radius: 20px;
-  cursor: pointer;
-  color: var(--mint);
-  font-family: inherit;
-  transition: all 0.2s;
+  font-size: 12px; font-weight: 600;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 20px; cursor: pointer;
+  color: var(--text-3); font-family: inherit; transition: all 0.15s;
 }
-.class-add-tab:hover { background: var(--mint-glow); }
+.class-tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.class-tab-btn:hover:not(.active) { color: var(--text); border-color: var(--border-strong); }
+.class-add-btn {
+  padding: 5px 12px;
+  font-size: 12px; font-weight: 600;
+  background: none; border: 1px dashed var(--border-strong);
+  border-radius: 20px; cursor: pointer;
+  color: var(--text-3); font-family: inherit; transition: all 0.15s;
+}
+.class-add-btn:hover { background: var(--bg-hover); color: var(--text); }
 .class-panel { display: none; }
 .class-panel.active { display: block; }
 .class-name-input {
-  font-size: 16px;
-  font-weight: 700;
-  background: none;
-  border: none;
+  font-size: 15px; font-weight: 700;
+  background: none; border: none;
   border-bottom: 2px solid var(--border);
-  color: var(--text);
-  padding: 4px 0;
-  font-family: inherit;
-  width: 120px;
+  color: var(--text); padding: 3px 0;
+  font-family: inherit; width: 110px;
 }
-.class-name-input:focus { outline: none; border-bottom-color: var(--mint); }
+.class-name-input:focus { outline: none; border-bottom-color: var(--accent); }
 
-/* 학생 행 */
-.student-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.student-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
 .student-row {
   display: grid;
-  grid-template-columns: 28px 130px 90px 1fr auto;
-  gap: 10px;
-  align-items: center;
-  background: rgba(15,23,42,0.4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 9px 12px;
-  transition: border-color 0.2s;
+  grid-template-columns: 24px 140px 90px auto;
+  gap: 8px; align-items: center;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius-xs); padding: 7px 10px;
 }
-.student-row:hover { border-color: rgba(255,255,255,0.12); }
-.s-num { font-size: 11px; color: var(--text-muted); text-align: center; font-weight: 600; }
+.student-row:hover { border-color: var(--border-strong); }
+.s-num { font-size: 11px; color: var(--text-3); text-align: center; font-weight: 600; }
 .add-student-btn {
-  width: 100%;
-  padding: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  background: none;
-  border: 1px dashed rgba(45,212,191,0.25);
-  border-radius: var(--radius-sm);
-  color: var(--mint);
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s;
+  width: 100%; padding: 8px;
+  font-size: 12px; font-weight: 600;
+  background: none; border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-xs);
+  color: var(--text-3); cursor: pointer;
+  font-family: inherit; transition: all 0.15s;
 }
-.add-student-btn:hover { background: var(--mint-glow); }
+.add-student-btn:hover { background: var(--bg-hover); color: var(--text); }
 
-/* 조합 */
-.trait-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.student-combine-row {
-  background: rgba(15,23,42,0.5);
+/* 자동생성 박스 */
+.auto-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 14px; margin-bottom: 16px;
+}
+.auto-box-title { font-size: 11px; font-weight: 700; color: var(--text-3); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.auto-inputs { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.auto-inputs > div { flex: 1; min-width: 60px; }
+.paste-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 14px; margin-top: 12px;
+}
+
+/* ── 설정 ── */
+.setting-card {
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 12px 14px;
-  margin-bottom: 8px;
-  transition: border-color 0.2s;
-}
-.student-combine-row:hover { border-color: rgba(255,255,255,0.12); }
-.combine-student-id {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--mint);
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.combine-student-id::before {
-  content: '';
-  width: 6px; height: 6px;
-  background: var(--mint);
-  border-radius: 50%;
+  padding: 18px; margin-bottom: 12px;
+  box-shadow: var(--shadow);
 }
 
-/* 결과 */
-.result-card {
-  background: rgba(15,23,42,0.5);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 14px 16px;
-  margin-bottom: 10px;
-  transition: border-color 0.2s;
-}
-.result-card:hover { border-color: rgba(255,255,255,0.12); }
-.result-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-.result-student-id {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.byte-chip {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-family: monospace;
-}
-.byte-ok { background: rgba(45,212,191,0.1); color: var(--mint); border: 1px solid rgba(45,212,191,0.2); }
-.byte-warn { background: rgba(251,191,36,0.1); color: var(--amber); border: 1px solid rgba(251,191,36,0.2); }
-.byte-over { background: rgba(248,113,113,0.1); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
-.result-text {
-  font-size: 13px;
-  line-height: 1.9;
-  color: var(--text-dim);
-  white-space: pre-wrap;
-}
-.result-actions { display: flex; gap: 6px; margin-top: 10px; }
+/* ── 빈 상태 ── */
+.empty { text-align: center; padding: 40px 20px; color: var(--text-3); font-size: 13px; line-height: 2; }
+.empty-icon { font-size: 36px; margin-bottom: 10px; opacity: 0.4; }
 
-/* 내보내기 */
-.export-section {
-  background: rgba(52,211,153,0.04);
-  border: 1px solid rgba(52,211,153,0.15);
-  border-radius: var(--radius);
-  padding: 20px;
-  margin-top: 16px;
-}
-.export-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--green);
-  margin-bottom: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+/* ── 토스트 ── */
+@keyframes fadeInUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
 
-/* 설정 */
-.setting-item {
-  background: rgba(15,23,42,0.4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 16px;
-  margin-bottom: 10px;
-}
-.setting-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-dim);
-  margin-bottom: 4px;
-}
-.setting-desc {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-bottom: 12px;
-}
-
-/* 구분선 */
-.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
-
-/* 빈 상태 */
-.empty {
-  text-align: center;
-  padding: 48px 20px;
-  color: var(--text-muted);
-  font-size: 14px;
-  line-height: 2;
-}
-.empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
-
-/* 섹션 제목 */
-.section-eyebrow {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--mint);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 6px;
-}
-.section-title {
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--text);
-  letter-spacing: -0.5px;
-  margin-bottom: 4px;
-}
-.section-desc {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-bottom: 24px;
-}
-
-/* 활동 행 UI */
-.activity-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-.activity-row {
-  display: grid;
-  grid-template-columns: 160px 1fr 1fr auto;
-  gap: 8px;
-  align-items: start;
-  background: rgba(15,23,42,0.5);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
-  transition: border-color 0.2s;
-}
-.activity-row:hover { border-color: rgba(45,212,191,0.2); }
-.activity-row label { font-size: 10px; margin-bottom: 4px; }
-.add-activity-btn {
-  width: 100%;
-  padding: 9px;
-  font-size: 12px;
-  font-weight: 600;
-  background: none;
-  border: 1px dashed rgba(45,212,191,0.25);
-  border-radius: var(--radius-sm);
-  color: var(--mint);
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s;
-}
-.add-activity-btn:hover { background: var(--mint-glow); }
-.activity-date-inputs { display: flex; gap: 4px; align-items: center; }
-.activity-date-inputs select {
-  padding: 6px 4px;
-  font-size: 12px;
-  width: auto;
-  min-width: 0;
-}
-.activity-date-inputs select:nth-child(1) { flex: 2; }
-.activity-date-inputs select:nth-child(2) { flex: 1.2; }
-.activity-date-inputs select:nth-child(3) { flex: 1.2; }
-.activity-row input[type=text] { padding: 7px 10px; font-size: 12px; }
-.activity-row textarea { min-height: 52px; font-size: 12px; padding: 7px 10px; resize: vertical; }
-
-/* 학생 자동생성 박스 */
-.auto-gen-box {
-  background: rgba(45,212,191,0.04);
-  border: 1px solid rgba(45,212,191,0.18);
-  border-radius: var(--radius-sm);
-  padding: 14px 16px;
-  margin-bottom: 16px;
-}
-.auto-gen-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--mint);
-  margin-bottom: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.auto-gen-inputs {
-  display: flex;
-  gap: 8px;
-  align-items: flex-end;
-  flex-wrap: wrap;
-}
-.auto-gen-inputs > div { flex: 1; min-width: 60px; }
-.auto-gen-inputs label { font-size: 10px; margin-bottom: 4px; }
-.auto-gen-inputs input { padding: 8px 10px; font-size: 13px; }
-
-/* 형식 정리 버튼 영역 */
-.format-btn-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
-}
-
-/* 스크롤바 */
+/* ── 스크롤바 ── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
 
-@media(max-width:640px){
-  .tab-content { padding: 20px 16px; }
-  .header { padding: 0 16px; }
-  .nav { padding: 0 16px; }
-  .grid-2,.grid-3,.grid-4 { grid-template-columns: 1fr; }
-  .student-row { grid-template-columns: 24px 1fr 80px auto; }
-  .student-row .s-pnum { display: none; }
-  .trait-grid { grid-template-columns: 1fr 1fr; }
-  .activity-row { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; }
-  .activity-row > .act-date-col { grid-column: 1 / -1; }
-  .activity-row > .act-del-col { grid-column: 2; grid-row: 2; display: flex; align-items: flex-end; justify-content: flex-end; }
+@media(max-width:900px){
+  .hero { padding: 28px 20px 24px; }
+  .how-banner { grid-template-columns: 1fr 1fr; }
+  .nav, .tab-content { padding-left: 20px; padding-right: 20px; }
+  .header { padding: 0 20px; }
+  .split-layout { grid-template-columns: 1fr; }
+  .split-right-sticky { position: static; max-height: none; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .ch-act-row { grid-template-columns: 1fr 1fr; }
+  .ch-act-row > div:first-child { grid-column: 1 / -1; }
+  .hero-title { font-size: 26px; }
+}
+@media(max-width:600px){
+  .how-banner { grid-template-columns: 1fr; }
+  .how-arrow { display: none; }
+  .student-row { grid-template-columns: 20px 1fr 80px auto; }
+  .se-act-row { grid-template-columns: 1fr auto; }
+  .se-act-row > div:first-child { grid-column: 1 / -1; }
 }
 </style>
 </head>
@@ -690,166 +530,240 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.7; }
 <header class="header">
   <div class="header-logo">
     <div class="logo-mark">📋</div>
-    <h1>기록부 메이커</h1>
+    <h1>생활기록부 작성 메이커</h1>
   </div>
-  <span class="header-badge">✦ 완전 무료</span>
+
 </header>
 
+<!-- ── 히어로 + 사용법 배너 ── -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">STUDENT RECORD · AI PHRASE MAKER</div>
+    <div class="hero-title">생활기록부<br>작성 메이커</div>
+    <div class="hero-desc">활동을 등록하고 AI 문구를 받아 저장하면, 학생별 문구를 자동으로 조합해드려요.</div>
+
+    <div class="how-banner">
+      <div class="how-step">
+        <div class="how-step-num">STEP 01</div>
+        <div class="how-step-title">📚 활동 등록</div>
+        <div class="how-step-desc">세특·창체 탭에서 과목/활동을 등록하세요.</div>
+        <span class="how-arrow">›</span>
+      </div>
+      <div class="how-step">
+        <div class="how-step-num">STEP 02</div>
+        <div class="how-step-title">🤖 AI 문구 생성</div>
+        <div class="how-step-desc">AI용 텍스트를 복사해 챗AI에 붙여넣으세요.</div>
+        <span class="how-arrow">›</span>
+      </div>
+      <div class="how-step">
+        <div class="how-step-num">STEP 03</div>
+        <div class="how-step-title">📝 문구 뱅크 저장</div>
+        <div class="how-step-desc">받은 문구를 붙여넣고 형식 정리 버튼을 누르세요.</div>
+        <span class="how-arrow">›</span>
+      </div>
+      <div class="how-step">
+        <div class="how-step-num">STEP 04</div>
+        <div class="how-step-title">✨ 학생별 조합</div>
+        <div class="how-step-desc">오른쪽 패널에서 반을 선택해 자동 조합하세요.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 네비 ── -->
 <nav class="nav">
   <button class="nav-tab active" onclick="showTab('t-se')">📚 세특</button>
   <button class="nav-tab" onclick="showTab('t-ch')">🏆 창체</button>
   <button class="nav-tab" onclick="showTab('t-student')">👥 학생관리</button>
-  <button class="nav-tab" onclick="showTab('t-combine')">✨ 문구조합</button>
   <button class="nav-tab" onclick="showTab('t-setting')">⚙️ 설정</button>
 </nav>
 
-<!-- ── 세특 ── -->
+<!-- ══ 세특 ══ -->
 <div class="tab-content active" id="t-se">
-  <div class="section-eyebrow">세부능력 및 특기사항</div>
-  <div class="section-title">세특 관리</div>
-  <div class="section-desc">과목별 성취기준과 활동을 등록하고 AI용 문구를 받아 저장하세요.</div>
+  <div class="split-layout">
 
-  <div class="card">
-    <div class="card-title">
-      <div class="card-title-icon icon-blue">📚</div>
-      과목 추가
-    </div>
-    <div style="display:flex;gap:10px;align-items:flex-end;">
-      <div style="flex:1;">
-        <label>과목명</label>
-        <input type="text" id="se-subject-input" placeholder="예: 체육, 수학, 국어" onkeydown="if(event.key==='Enter')addSeSubject()">
+    <!-- 왼쪽: 입력 -->
+    <div class="split-left">
+      <div class="card">
+        <div class="card-title"><div class="card-icon icon-dark">📚</div>과목 추가</div>
+        <div style="display:flex;gap:8px;align-items:flex-end;">
+          <div style="flex:1;">
+            <label>과목명</label>
+            <input type="text" id="se-subject-input" placeholder="예: 체육, 수학, 국어" onkeydown="if(event.key==='Enter')addSeSubject()">
+          </div>
+          <button class="btn btn-dark" onclick="addSeSubject()">+ 추가</button>
+        </div>
       </div>
-      <button class="btn btn-mint" onclick="addSeSubject()">+ 추가</button>
-    </div>
-  </div>
 
-  <div class="card">
-    <div class="sub-tabs" id="seSubTabs">
-      <span style="font-size:12px;color:var(--text-muted);">과목을 추가해주세요.</span>
+      <div class="card">
+        <div class="sub-tabs" id="seSubTabs">
+          <span style="font-size:12px;color:var(--text-3);">과목을 추가해주세요.</span>
+        </div>
+        <div id="seSubPanels"></div>
+      </div>
     </div>
-    <div id="seSubPanels"></div>
+
+    <!-- 오른쪽: 조합 결과 -->
+    <div class="split-right">
+      <div class="split-right-sticky">
+        <div class="card">
+          <div class="result-header-bar">
+            <div class="result-title">✨ 문구 조합 결과</div>
+          </div>
+          <div class="result-class-sel">
+            <div style="flex:1;">
+              <label>반 선택</label>
+              <select id="se-result-class" onchange="seRenderCombine()"></select>
+            </div>
+            <div style="flex:1;">
+              <label>과목</label>
+              <select id="se-result-subject" onchange="seRenderCombine()"></select>
+            </div>
+          </div>
+          <button class="btn btn-dark btn-full" onclick="seCombine()" style="margin-bottom:12px;">✨ 조합하기</button>
+          <div id="se-combine-results"><div class="empty"><div class="empty-icon">📝</div>반과 과목을 선택 후<br>조합하기를 눌러주세요.</div></div>
+          <div id="se-export-box" style="display:none;margin-top:12px;">
+            <div class="export-box">
+              <div class="export-title">📥 나이스 CSV 내보내기</div>
+              <div class="grid-2" style="margin-bottom:10px;">
+                <div><label>양식</label>
+                  <select id="se-export-type">
+                    <option value="se">과목 세특 양식</option>
+                    <option value="jinro">진로특기사항 양식</option>
+                    <option value="simple">자율/동아리 (자체)</option>
+                  </select>
+                </div>
+                <div><label>과목명</label><input type="text" id="se-export-subject" placeholder="예: 체육"></div>
+              </div>
+              <button class="btn btn-green btn-full" onclick="exportExcel('se')">📥 CSV 다운로드</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
-<!-- ── 창체 ── -->
+<!-- ══ 창체 ══ -->
 <div class="tab-content" id="t-ch">
-  <div class="section-eyebrow">창의적 체험활동</div>
-  <div class="section-title">창체 관리</div>
-  <div class="section-desc">자율·진로·동아리 활동별 문구 뱅크를 등록하세요.</div>
+  <div class="split-layout">
 
-  <div class="card">
-    <div class="sub-tabs">
-      <button class="sub-tab active" onclick="switchChTab('자율')">📌 자율활동</button>
-      <button class="sub-tab" onclick="switchChTab('진로')">🔭 진로활동</button>
-      <button class="sub-tab" onclick="switchChTab('동아리')">🎨 동아리활동</button>
+    <!-- 왼쪽: 입력 -->
+    <div class="split-left">
+      <div class="card">
+        <div class="sub-tabs">
+          <button class="sub-tab active" onclick="switchChTab('자율')">📌 자율활동</button>
+          <button class="sub-tab" onclick="switchChTab('진로')">🔭 진로활동</button>
+          <button class="sub-tab" onclick="switchChTab('동아리')">🎨 동아리활동</button>
+        </div>
+        <div id="chPanels"></div>
+      </div>
     </div>
-    <div id="chPanels"></div>
+
+    <!-- 오른쪽: 조합 결과 -->
+    <div class="split-right">
+      <div class="split-right-sticky">
+        <div class="card">
+          <div class="result-header-bar">
+            <div class="result-title">✨ 문구 조합 결과</div>
+          </div>
+          <div class="result-class-sel">
+            <div style="flex:1;">
+              <label>반 선택</label>
+              <select id="ch-result-class" onchange="chRenderCombine()"></select>
+            </div>
+          </div>
+          <button class="btn btn-dark btn-full" onclick="chCombine()" style="margin-bottom:12px;">✨ 조합하기</button>
+          <div id="ch-combine-results"><div class="empty"><div class="empty-icon">📝</div>반을 선택 후<br>조합하기를 눌러주세요.</div></div>
+          <div id="ch-export-box" style="display:none;margin-top:12px;">
+            <div class="export-box">
+              <div class="export-title">📥 나이스 CSV 내보내기</div>
+              <div class="grid-2" style="margin-bottom:10px;">
+                <div><label>양식</label>
+                  <select id="ch-export-type">
+                    <option value="jinro">진로특기사항 양식</option>
+                    <option value="simple">자율/동아리 (자체)</option>
+                  </select>
+                </div>
+                <div><label>활동명</label><input type="text" id="ch-export-activity" placeholder="예: 자율활동"></div>
+              </div>
+              <button class="btn btn-green btn-full" onclick="exportExcel('ch')">📥 CSV 다운로드</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
-<!-- ── 학생관리 ── -->
+<!-- ══ 학생관리 ══ -->
 <div class="tab-content" id="t-student">
-  <div class="section-eyebrow">학생 데이터</div>
-  <div class="section-title">학생 관리</div>
-  <div class="section-desc">반별로 학생을 등록하세요. 학번과 학생개인번호를 입력해두면 엑셀 내보내기 시 자동으로 채워져요.</div>
-
   <div class="card">
     <div class="card-title">
-      <div class="card-title-icon icon-mint">👥</div>
+      <div class="card-icon icon-dark">👥</div>
       반별 학생 목록
-      <button class="class-add-tab" onclick="addClass()" style="margin-left:auto;">+ 반 추가</button>
+      <button class="class-add-btn" onclick="addClass()" style="margin-left:auto;">+ 반 추가</button>
     </div>
-    <div class="auto-gen-box">
-      <div class="auto-gen-title">⚡ 학생 자동 생성</div>
-      <div class="auto-gen-inputs">
-        <div>
-          <label>반 번호</label>
-          <input type="number" id="autogen-classnum" placeholder="예: 1" min="1" max="20" style="width:100%;">
-        </div>
-        <div>
-          <label>인원수</label>
-          <input type="number" id="autogen-count" placeholder="예: 28" min="1" max="50" style="width:100%;">
-        </div>
-        <button class="btn btn-mint" onclick="autoGenStudents()" style="white-space:nowrap;align-self:flex-end;">자동 생성</button>
+
+    <!-- 자동생성 -->
+    <div class="auto-box">
+      <div class="auto-box-title">⚡ 번호+인원으로 자동 생성</div>
+      <div class="auto-inputs">
+        <div><label>반 번호</label><input type="number" id="autogen-classnum" placeholder="예: 1" min="1" max="20"></div>
+        <div><label>인원수</label><input type="number" id="autogen-count" placeholder="예: 28" min="1" max="50"></div>
+        <button class="btn btn-dark" onclick="autoGenStudents()" style="white-space:nowrap;align-self:flex-end;">자동 생성</button>
       </div>
-      <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">💡 설정의 학년 + 입력한 반 + 번호로 학번을 자동 생성해요. (예: 1학년 1반 → 10101~)</div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:7px;">💡 설정의 학년 + 반 번호 + 번호 순으로 학번 자동생성 (예: 1학년 1반 → 10101~)</div>
+
+      <!-- 붙여넣기 방식 -->
+      <div class="paste-box">
+        <div class="auto-box-title" style="margin-bottom:8px;">📋 번호+성별 붙여넣기로 생성</div>
+        <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+          <div style="flex:1;min-width:100px;">
+            <label>반 번호</label>
+            <input type="number" id="paste-classnum" placeholder="예: 1" min="1" max="20">
+          </div>
+          <div style="flex:3;">
+            <label>번호+성별 (한 줄씩)</label>
+            <textarea id="paste-students" placeholder="1 남&#10;2 여&#10;3 남&#10;4 여" style="min-height:70px;"></textarea>
+          </div>
+          <button class="btn btn-dark" onclick="pasteGenStudents()" style="white-space:nowrap;align-self:flex-end;">생성</button>
+        </div>
+      </div>
     </div>
+
     <div class="class-tabs" id="classTabBar"></div>
     <div id="classPanels"></div>
   </div>
 </div>
 
-<!-- ── 문구조합 ── -->
-<div class="tab-content" id="t-combine">
-  <div class="section-eyebrow">AI 없이 조합</div>
-  <div class="section-title">문구 조합</div>
-  <div class="section-desc">등록된 문구 뱅크에서 학생별 특성을 선택해 문구를 조합하고 엑셀로 내보내세요.</div>
-
-  <div class="card">
-    <div class="grid-2" style="margin-bottom:16px;">
-      <div>
-        <label>반 선택</label>
-        <select id="combine-class" onchange="loadCombineStudents()"></select>
-      </div>
-      <div>
-        <label>조합 항목</label>
-        <select id="combine-type" onchange="loadCombineStudents()">
-          <option value="se">세특</option>
-          <option value="자율">창체 — 자율활동</option>
-          <option value="진로">창체 — 진로활동</option>
-          <option value="동아리">창체 — 동아리활동</option>
-        </select>
-      </div>
-    </div>
-    <div id="combineStudentArea"><div class="empty"><div class="empty-icon">👆</div>반과 항목을 선택해주세요.</div></div>
-    <button class="btn btn-mint btn-full" style="margin-top:16px;" onclick="combinePhrases()">✨ 문구 조합하기</button>
-  </div>
-
-  <div id="combineResults"></div>
-
-  <div class="export-section" id="exportBox" style="display:none;">
-    <div class="export-title">📥 나이스 엑셀 내보내기</div>
-    <div class="grid-3" style="margin-bottom:14px;">
-      <div>
-        <label>내보내기 양식</label>
-        <select id="export-type">
-          <option value="se">과목 세특 양식</option>
-          <option value="jinro">진로특기사항 양식</option>
-          <option value="simple">자율/동아리 (자체양식)</option>
-        </select>
-      </div>
-      <div>
-        <label>과목명 (세특용)</label>
-        <input type="text" id="export-subject" placeholder="예: 체육">
-      </div>
-      <div>
-        <label>활동명 (진로/창체용)</label>
-        <input type="text" id="export-activity" placeholder="예: 진로탐색활동">
-      </div>
-    </div>
-    <button class="btn btn-green-soft btn-full" onclick="exportExcel()">📥 CSV 다운로드 (나이스 업로드용)</button>
-  </div>
-</div>
-
-<!-- ── 설정 ── -->
+<!-- ══ 설정 ══ -->
 <div class="tab-content" id="t-setting">
-  <div class="section-eyebrow">환경설정</div>
-  <div class="section-title">설정</div>
-  <div class="section-desc">엑셀 내보내기 시 자동으로 채워질 기본값을 설정하세요.</div>
-
-  <div class="card">
-    <div class="card-title"><div class="card-title-icon icon-amber">⚙️</div>기본 정보</div>
-    <div class="grid-3" style="margin-bottom:16px;">
+  <div class="setting-card">
+    <div class="card-title"><div class="card-icon icon-amber">⚙️</div>기본 정보</div>
+    <div class="grid-3" style="margin-bottom:14px;">
       <div><label>학년도</label><input type="text" id="set-year" placeholder="2026"></div>
       <div><label>학기</label><select id="set-semester"><option value="1">1학기</option><option value="2">2학기</option></select></div>
       <div><label>학년</label><select id="set-grade"><option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option></select></div>
     </div>
-    <button class="btn btn-mint" onclick="saveSetting()">설정 저장</button>
+    <button class="btn btn-dark" onclick="saveSetting()">설정 저장</button>
   </div>
 
-  <div class="card">
-    <div class="card-title"><div class="card-title-icon icon-blue">🗑️</div>데이터 초기화</div>
-    <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">브라우저에 저장된 모든 데이터를 삭제합니다. 되돌릴 수 없어요.</p>
+  <div class="setting-card">
+    <div class="card-title"><div class="card-icon icon-green">💾</div>데이터 백업/복원</div>
+    <p style="font-size:13px;color:var(--text-2);margin-bottom:14px;">전체 데이터를 JSON 파일로 저장하거나 불러올 수 있어요. 다른 기기에서도 그대로 사용 가능해요.</p>
+    <div class="btn-row">
+      <button class="btn btn-green" onclick="exportJSON()">📤 데이터 내보내기 (.json)</button>
+      <button class="btn" onclick="document.getElementById('import-json').click()">📥 데이터 불러오기</button>
+      <input type="file" id="import-json" accept=".json" style="display:none;" onchange="importJSON(event)">
+    </div>
+  </div>
+
+  <div class="setting-card">
+    <div class="card-title"><div class="card-icon icon-gray">🗑️</div>데이터 초기화</div>
+    <p style="font-size:13px;color:var(--text-2);margin-bottom:14px;">브라우저에 저장된 모든 데이터를 삭제합니다. 되돌릴 수 없어요.</p>
     <button class="btn btn-danger" onclick="clearAll()">전체 초기화</button>
   </div>
 </div>
