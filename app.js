@@ -133,7 +133,12 @@ function renderSeSubjects(){
     btn.textContent=s; btn.onclick=()=>switchSeSubject(s);
     tabsEl.appendChild(btn);
 
-    const data=S.get('se-data-'+s,{achievement:'',activities:[],phrases:''});
+    const data=S.get('se-data-'+s,{achievements:[],activities:[],phrases:''});
+    // 마이그레이션: achievement 문자열 → achievements 배열
+    if(data.achievement!==undefined&&!data.achievements){
+      data.achievements=data.achievement?[data.achievement]:[];
+      delete data.achievement;
+    }
     const panel=document.createElement('div');
     panel.className='sub-panel'+(s===activeSeSubject?' active':'');
     panel.id='se-panel-'+s;
@@ -143,8 +148,9 @@ function renderSeSubjects(){
         <button class="btn btn-danger" style="font-size:11px;padding:4px 9px;" onclick="deleteSeSubject('${esc(s)}')">삭제</button>
       </div>
       <div style="margin-bottom:14px;">
-        <label>성취기준</label>
-        <textarea id="se-ach-${s}" placeholder="예: 운동 수행 능력을 향상시키고 체력을 기른다." oninput="saveSeData('${s}')">${esc(data.achievement)}</textarea>
+        <label style="margin-bottom:7px;display:block;">성취기준</label>
+        <div class="activity-list" id="se-ach-list-${s}"></div>
+        <button class="add-row-btn" onclick="addSeAch('${s}')">+ 성취기준 추가</button>
       </div>
       <div style="margin-bottom:8px;">
         <label style="margin-bottom:7px;display:block;">활동 목록</label>
@@ -177,6 +183,7 @@ function renderSeSubjects(){
         <textarea id="se-phrases-${s}" placeholder="AI에게 받은 문구를 여기에 붙여넣으세요..." oninput="saveSeData('${s}')" style="min-height:150px;">${esc(data.phrases)}</textarea>
       </div>`;
     panelsEl.appendChild(panel);
+    renderSeAchievements(s, data.achievements||[]);
     renderSeActivities(s, data.activities||[]);
     updateCount('se-phrases-'+s,'se-count-'+s);
   });
@@ -191,7 +198,7 @@ function switchSeSubject(s){
 
 function saveSeData(s){
   S.set('se-data-'+s,{
-    achievement:document.getElementById('se-ach-'+s)?.value||'',
+    achievements:getSeAchievements(s),
     activities:getSeActivities(s),
     phrases:document.getElementById('se-phrases-'+s)?.value||''
   });
@@ -208,7 +215,67 @@ function deleteSeSubject(s){
   refreshClassSelects();
 }
 
-// ── 세특 활동 행 (날짜 없음) ──
+// ── 성취기준 행 ──
+let seAchCount=0;
+function makeSeAchRow(uid,val){
+  return `<div class="se-act-row" id="se-ach-row-${uid}" style="grid-template-columns:1fr auto;">
+    <input type="text" id="se-ach-${uid}" value="${esc(val||'')}" placeholder="예: 운동 수행 능력을 향상시키고 체력을 기른다." oninput="saveSeFromAchRow(this)">
+    <button class="btn btn-danger" style="font-size:11px;padding:4px 8px;" onclick="removeSeAch('${uid}',this)">삭제</button>
+  </div>`;
+}
+
+function getSeSubjectFromAchRow(el){
+  let node=el;
+  while(node&&!node.id?.startsWith('se-panel-'))node=node.parentElement;
+  return node?.id?.replace('se-panel-','');
+}
+
+function saveSeFromAchRow(el){
+  const s=getSeSubjectFromAchRow(el);
+  if(s)saveSeData(s);
+}
+
+function addSeAch(s){
+  seAchCount++;
+  const uid='seach_'+seAchCount;
+  const container=document.getElementById('se-ach-list-'+s);
+  if(!container)return;
+  container.insertAdjacentHTML('beforeend',makeSeAchRow(uid,''));
+  saveSeData(s);
+}
+
+function removeSeAch(uid,btn){
+  document.getElementById('se-ach-row-'+uid)?.remove();
+  const s=getSeSubjectFromAchRow(btn);
+  if(s)saveSeData(s);
+}
+
+function renderSeAchievements(s,achs){
+  const container=document.getElementById('se-ach-list-'+s);
+  if(!container)return;
+  container.innerHTML='';
+  if(!achs||!achs.length){
+    // 기본 1개
+    seAchCount++;
+    container.insertAdjacentHTML('beforeend',makeSeAchRow('seach_'+seAchCount,''));
+    return;
+  }
+  achs.forEach(v=>{
+    seAchCount++;
+    container.insertAdjacentHTML('beforeend',makeSeAchRow('seach_'+seAchCount,v));
+  });
+}
+
+function getSeAchievements(s){
+  const container=document.getElementById('se-ach-list-'+s);
+  if(!container)return[];
+  return Array.from(container.querySelectorAll('.se-act-row')).map(row=>{
+    const uid=row.id.replace('se-ach-row-','');
+    return document.getElementById('se-ach-'+uid)?.value.trim()||'';
+  }).filter(Boolean);
+}
+
+
 let seActCount=0;
 function makeSeActRow(uid,act){
   return `<div class="se-act-row" id="se-act-row-${uid}">
@@ -273,11 +340,13 @@ function getSeActivities(s){
 }
 
 function updateSePreview(s){
-  const ach=document.getElementById('se-ach-'+s)?.value||'';
+  const achs=getSeAchievements(s);
+  const achText=achs.length?achs.map((a,i)=>`${i+1}. ${a}`).join('\n'):'(미입력)';
   const acts=getSeActivities(s);
   const actText=acts.length?acts.map(a=>`  - ${a.name||'(활동명 없음)'}${a.desc?' | '+a.desc:''}`).join('\n'):'(활동 없음)';
   document.getElementById('se-preview-'+s).textContent=`[세특 문구 생성 요청] 과목: ${s}
-성취기준: ${ach||'(미입력)'}
+성취기준:
+${achText}
 활동 목록:
 ${actText}
 
