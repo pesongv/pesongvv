@@ -285,7 +285,7 @@ ${actText}
 원칙: 관찰자 시점 / 개조식(~함. ~보임.) / 주어 없이 / 긍정적 표현
 
 각 활동마다 [활동명] 형식으로 시작하여 해당 활동에서 나올 수 있는
-다양한 교육적 요소를 담은 문구를 10개씩 작성해주세요.
+다양한 교육적 요소를 담은 문구를 15개씩 작성해주세요.
 예시) [배드민턴수행평가] 기초 기술을 꾸준히 익히며 향상된 수행 능력을 보임.`;
 }
 
@@ -317,15 +317,21 @@ function seCombine(){
   const students=getStudentsOfClass(cid);
   if(!students.length)return showToast('학생을 먼저 등록해주세요!','err');
 
+  // 활동별 사용된 문장 인덱스 추적
+  const seUsedMap={};
+  actNames.forEach(act=>{seUsedMap[act]=[];});
+
   const results=students.map(s=>{
-    // 활동 전체 중 랜덤 2개 선택 후 날짜순(등록 순) 정렬 — 세특은 날짜 없으므로 선택 순서 유지
     const shuffled=[...actNames].sort(()=>Math.random()-0.5);
     const chosen=shuffled.slice(0,Math.min(2,shuffled.length));
     const parts=chosen.map(act=>{
       const ps=actMap[act];
-      const shuffledPs=[...ps].sort(()=>Math.random()-0.5);
-      const picked=shuffledPs.slice(0,Math.min(2,shuffledPs.length));
-      return actPrefix(act)+picked.join(' ');
+      let avail=ps.map((_,i)=>i).filter(i=>!seUsedMap[act].includes(i));
+      if(avail.length<2){seUsedMap[act]=[];avail=ps.map((_,i)=>i);}
+      const shuffledAvail=[...avail].sort(()=>Math.random()-0.5);
+      const picked=shuffledAvail.slice(0,Math.min(2,shuffledAvail.length));
+      picked.forEach(i=>seUsedMap[act].push(i));
+      return actPrefix(act)+picked.map(i=>ps[i]).join(' ');
     });
     return{studentId:s.id,gender:s.gender,text:parts.join('\n')};
   });
@@ -501,7 +507,7 @@ ${actText}
 원칙: 관찰자 시점 / 개조식(~함. ~보임.) / 주어 없이 / 긍정적
 
 각 활동마다 [활동명] 형식으로 시작하여 해당 활동에서 나올 수 있는
-다양한 교육적 요소(공감, 협력, 참여태도, 책임감, 창의성 등)를 담은 문구를 10개씩 작성해주세요.
+다양한 교육적 요소(공감, 협력, 참여태도, 책임감, 창의성 등)를 담은 문구를 15개씩 작성해주세요.
 예시) [학교폭력예방교육] 공감 능력의 중요성을 인식하며 경청하는 태도를 보임.`;
 }
 
@@ -532,17 +538,22 @@ function chCombine(){
   const students=getStudentsOfClass(cid);
   if(!students.length)return showToast('학생을 먼저 등록해주세요!','err');
 
+  // 활동별 사용된 문장 인덱스 추적
+  const chUsedMap={};
+  actNames.forEach(act=>{chUsedMap[act]=[];});
+
   const results=students.map(s=>{
-    // 랜덤 2개 선택 → 날짜순으로 정렬
     const shuffled=[...sortedActNames].sort(()=>Math.random()-0.5);
     const chosen=shuffled.slice(0,Math.min(2,shuffled.length));
-    // 날짜순 정렬 (sortedActNames 순서 기준)
     chosen.sort((a,b)=>sortedActNames.indexOf(a)-sortedActNames.indexOf(b));
     const parts=chosen.map(act=>{
       const ps=actMap[act];
-      const shuffledPs=[...ps].sort(()=>Math.random()-0.5);
-      const picked=shuffledPs.slice(0,Math.min(2,shuffledPs.length));
-      return actPrefix(act)+picked.join(' ');
+      let avail=ps.map((_,i)=>i).filter(i=>!chUsedMap[act].includes(i));
+      if(avail.length<2){chUsedMap[act]=[];avail=ps.map((_,i)=>i);}
+      const shuffledAvail=[...avail].sort(()=>Math.random()-0.5);
+      const picked=shuffledAvail.slice(0,Math.min(2,shuffledAvail.length));
+      picked.forEach(i=>chUsedMap[act].push(i));
+      return actPrefix(act)+picked.map(i=>ps[i]).join(' ');
     });
     return{studentId:s.id,gender:s.gender,text:parts.join('\n')};
   });
