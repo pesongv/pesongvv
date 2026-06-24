@@ -50,7 +50,7 @@ body {
   font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
   background: var(--bg);
   color: var(--text);
-  font-size: 14px;
+  font-size: 15px;
   min-height: 100vh;
 }
 
@@ -459,13 +459,13 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
 .student-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
 .student-row {
   display: grid;
-  grid-template-columns: 24px 140px 90px auto;
+  grid-template-columns: 24px 140px 90px 60px auto;
   gap: 8px; align-items: center;
   background: var(--bg); border: 1px solid var(--border);
-  border-radius: var(--radius-xs); padding: 7px 10px;
+  border-radius: var(--radius-xs); padding: 8px 12px;
 }
 .student-row:hover { border-color: var(--border-strong); }
-.s-num { font-size: 11px; color: var(--text-3); text-align: center; font-weight: 600; }
+.s-num { font-size: 13px; color: var(--text-3); text-align: center; font-weight: 600; }
 .add-student-btn {
   width: 100%; padding: 8px;
   font-size: 12px; font-weight: 600;
@@ -683,6 +683,13 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
             <div style="flex:1;">
               <label>반 선택</label>
               <select id="ch-result-class" onchange="chRenderCombine()"></select>
+            </div>
+            <div style="flex:1;">
+              <label>활동명 형식</label>
+              <select id="ch-date-format">
+                <option value="no-date">활동명만</option>
+                <option value="with-date">활동명+날짜</option>
+              </select>
             </div>
           </div>
           <button class="btn btn-dark btn-full" onclick="chCombine()" style="margin-bottom:12px;">✨ 조합하기</button>
