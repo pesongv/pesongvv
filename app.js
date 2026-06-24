@@ -295,7 +295,15 @@ function copySeAiText(s){
     .then(()=>showToast('복사됐어요! AI에 붙여넣으세요 😊'));
 }
 
-// ── 세특 조합 ──
+// ── 활동명 연결어 ──
+const ACT_CONNECTORS=['에서','을 통해','를 통해','에 참여하여','활동에서','을 마치며','를 마치며','시간에','수업에서'];
+function actPrefix(name){
+  const c=ACT_CONNECTORS[Math.floor(Math.random()*ACT_CONNECTORS.length)];
+  // 을/를 구분: 받침 있으면 '을', 없으면 '를' (통해/에서 등은 고정)
+  return name+c+' ';
+}
+
+
 function seRenderCombine(){}
 
 function seCombine(){
@@ -319,7 +327,7 @@ function seCombine(){
       const picked=[];
       const shuffledPs=[...ps].sort(()=>Math.random()-0.5);
       picked.push(...shuffledPs.slice(0,Math.min(2,shuffledPs.length)));
-      return picked.join(' ');
+      return actPrefix(act)+picked.join(' '+actPrefix(act));
     });
     return{studentId:s.id,gender:s.gender,text:parts.join('\n')};
   });
@@ -535,7 +543,8 @@ function chCombine(){
     const parts=chosen.map(act=>{
       const ps=actMap[act];
       const shuffledPs=[...ps].sort(()=>Math.random()-0.5);
-      return shuffledPs.slice(0,Math.min(2,shuffledPs.length)).join(' ');
+      const picked=shuffledPs.slice(0,Math.min(2,shuffledPs.length));
+      return actPrefix(act)+picked.join(' '+actPrefix(act));
     });
     return{studentId:s.id,gender:s.gender,text:parts.join('\n')};
   });
