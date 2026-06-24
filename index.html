@@ -502,7 +502,80 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
   box-shadow: var(--shadow);
 }
 
-/* ── 빈 상태 ── */
+/* ── 가이드 모달 ── */
+.guide-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 600;
+  color: var(--blue); background: var(--blue-soft);
+  border: 1px solid #c5d9f5; border-radius: 20px;
+  padding: 5px 14px; cursor: pointer;
+  font-family: inherit; transition: all 0.15s;
+  margin-bottom: 16px;
+}
+.guide-btn:hover { background: #ddeafc; }
+.modal-overlay {
+  display: none; position: fixed;
+  inset: 0; background: rgba(0,0,0,0.45);
+  z-index: 1000; align-items: center; justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal-box {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  width: 560px; max-width: 95vw;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+.modal-header {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.modal-header-title { font-size: 15px; font-weight: 700; color: var(--text); }
+.modal-close {
+  width: 28px; height: 28px;
+  border-radius: 50%; border: none; background: var(--bg-hover);
+  cursor: pointer; font-size: 16px; color: var(--text-3);
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit;
+}
+.modal-close:hover { background: var(--border); }
+.modal-slides { overflow: hidden; }
+.modal-slide {
+  display: none; padding: 24px 28px;
+}
+.modal-slide.active { display: block; }
+.slide-step {
+  font-size: 11px; font-weight: 700;
+  color: var(--blue); text-transform: uppercase;
+  letter-spacing: 1px; margin-bottom: 10px;
+}
+.slide-icon { font-size: 40px; margin-bottom: 14px; display: block; }
+.slide-title { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 10px; }
+.slide-desc { font-size: 14px; color: var(--text-2); line-height: 1.9; }
+.slide-desc b { color: var(--text); font-weight: 700; }
+.slide-tip {
+  margin-top: 14px;
+  background: var(--amber-soft);
+  border: 1px solid #fce3a0;
+  border-radius: var(--radius-xs);
+  padding: 10px 14px;
+  font-size: 13px; color: var(--amber);
+  line-height: 1.7;
+}
+.modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.slide-dots { display: flex; gap: 6px; }
+.slide-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--border-strong); transition: all 0.2s; cursor: pointer;
+}
+.slide-dot.active { background: var(--accent); width: 18px; border-radius: 4px; }
+.modal-nav { display: flex; gap: 8px; }
+
 .empty { text-align: center; padding: 40px 20px; color: var(--text-3); font-size: 13px; line-height: 2; }
 .empty-icon { font-size: 36px; margin-bottom: 10px; opacity: 0.4; }
 
@@ -591,6 +664,7 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
 
 <!-- ══ 세특 ══ -->
 <div class="tab-content active" id="t-se">
+  <button class="guide-btn" onclick="openGuide('se')">📖 세특 사용 설명서</button>
   <div class="split-layout">
 
     <!-- 왼쪽: 입력 -->
@@ -659,6 +733,7 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
 
 <!-- ══ 창체 ══ -->
 <div class="tab-content" id="t-ch">
+  <button class="guide-btn" onclick="openGuide('ch')">📖 창체 사용 설명서</button>
   <div class="split-layout">
 
     <!-- 왼쪽: 입력 -->
@@ -719,6 +794,7 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
 
 <!-- ══ 학생관리 ══ -->
 <div class="tab-content" id="t-student">
+  <button class="guide-btn" onclick="openGuide('student')">📖 학생관리 사용 설명서</button>
   <div class="card">
     <div class="card-title">
       <div class="card-icon icon-dark">👥</div>
@@ -784,6 +860,163 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
     <div class="card-title"><div class="card-icon icon-gray">🗑️</div>데이터 초기화</div>
     <p style="font-size:13px;color:var(--text-2);margin-bottom:14px;">브라우저에 저장된 모든 데이터를 삭제합니다. 되돌릴 수 없어요.</p>
     <button class="btn btn-danger" onclick="clearAll()">전체 초기화</button>
+  </div>
+</div>
+
+<!-- ══ 가이드 모달들 ══ -->
+
+<!-- 세특 가이드 -->
+<div class="modal-overlay" id="guide-se">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-header-title">📚 세특 탭 사용 설명서</span>
+      <button class="modal-close" onclick="closeGuide('se')">✕</button>
+    </div>
+    <div class="modal-slides" id="slides-se">
+      <div class="modal-slide active">
+        <div class="slide-step">STEP 01 / 06</div>
+        <span class="slide-icon">➕</span>
+        <div class="slide-title">과목 추가하기</div>
+        <div class="slide-desc">왼쪽 상단 <b>과목명 입력란</b>에 과목명을 입력하고 <b>+ 추가</b> 버튼을 클릭하세요.<br>예) 체육, 수학, 국어, 영어</div>
+        <div class="slide-tip">💡 과목은 여러 개 추가할 수 있어요. 탭으로 전환하며 관리해요!</div>
+      </div>
+      <div class="modal-slide">
+        <div class="slide-step">STEP 02 / 06</div>
+        <span class="slide-icon">🎯</span>
+        <div class="slide-title">성취기준 입력하기</div>
+        <div class="slide-desc"><b>+ 성취기준 추가</b> 버튼으로 성취기준을 하나씩 입력하세요.<br>여러 개 입력 가능하며 AI가 문구 작성 시 참고해요.</div>
+        <div class="slide-tip">💡 성취기준이 구체적일수록 더 좋은 문구가 나와요!</div>
+      </div>
+      <div class="modal-slide">
+        <div class="slide-step">STEP 03 / 06</div>
+        <span class="slide-icon">📋</span>
+        <div class="slide-title">활동 목록 등록하기</div>
+        <div class="slide-desc"><b>+ 활동 추가</b> 버튼으로 활동명과 설명을 입력하세요.<br>활동설명은 선택사항이지만 입력하면 AI가 더 정확한 문구를 만들어줘요.</div>
+        <div class="slide-tip">💡 활동명이 나중에 문구 앞에 붙으니 짧고 명확하게 써주세요!</div>
+      </div>
+      <div class="modal-slide">
+        <div class="slide-step">STEP 04 / 06</div>
+        <span class="slide-icon">🤖</span>
+        <div class="slide-title">AI 문구 받기</div>
+        <div class="slide-desc"><b>📋 AI용 텍스트 복사</b> 버튼을 클릭한 뒤,<br>ChatGPT나 Claude 같은 AI 채팅창에 붙여넣으세요.<br>AI가 활동별·등급별 문구를 30개씩 만들어줘요.</div>
+        <div class="slide-tip">💡 문구 형식: [활동명-A], [활동명-B], [활동명-C], [활동명-D]</div>
+      </div>
+      <div class="modal-slide">
+        <div class="slide-step">STEP 05 / 06</div>
+        <span class="slide-icon">📝</span>
+        <div class="slide-title">문구 뱅크에 저장하기</div>
+        <div class="slide-desc">AI가 만들어준 문구를 <b>문구 뱅크</b> 텍스트창에 붙여넣고<br><b>✨ 형식 정리</b> 버튼을 클릭하세요.<br>자동으로 [활동명-A] 문장 형식으로 정리돼요.</div>
+        <div class="slide-tip">💡 형식 정리 후 전체 삭제 버튼으로 다시 시작할 수도 있어요!</div>
+      </div>
+      <div class="modal-slide">
+        <div class="slide-step">STEP 06 / 06</div>
+        <span class="slide-icon">✨</span>
+        <div class="slide-title">학생별 조합하기</div>
+        <div class="slide-desc">오른쪽 패널에서 <b>반을 선택</b>하면 학생 목록이 나타나요.<br>각 학생의 <b>등급(A/B/C/D)</b>을 설정한 뒤<br><b>✨ 조합하기</b> 버튼을 클릭하면 자동으로 문구가 완성돼요!</div>
+        <div class="slide-tip">💡 결과는 수정·복사·CSV 내보내기가 모두 가능해요!</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div class="slide-dots" id="dots-se"></div>
+      <div class="modal-nav">
+        <button class="btn" onclick="prevSlide('se')">← 이전</button>
+        <button class="btn btn-dark" onclick="nextSlide('se')">다음 →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 창체 가이드 -->
+<div class="modal-overlay" id="guide-ch">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-header-title">🏆 창체 탭 사용 설명서</span>
+      <button class="modal-close" onclick="closeGuide('ch')">✕</button>
+    </div>
+    <div class="modal-slides" id="slides-ch">
+      <div class="modal-slide active">
+        <div class="slide-step">STEP 01 / 05</div>
+        <span class="slide-icon">📌</span>
+        <div class="slide-title">활동 유형 선택하기</div>
+        <div class="slide-desc">상단 탭에서 <b>자율활동 / 진로활동 / 동아리활동</b> 중 작성할 유형을 선택하세요.<br>각 유형별로 활동과 문구를 따로 관리할 수 있어요.</div>
+        <div class="slide-tip">💡 탭마다 독립적으로 저장돼요!</div>
+      </div>
+      <div class="modal-slide">
+        <div class="slide-step">STEP 02 / 05</div>
+        <span class="slide-icon">📅</span>
+        <div class="slide-title">활동 목록 등록하기</div>
+        <div class="slide-desc"><b>+ 활동 추가</b> 버튼으로 날짜·활동명·설명을 입력하세요.<br>날짜를 선택하면 <b>자동으로 날짜순 정렬</b>이 돼요.</div>
+        <div class="slide-tip">💡 활동설명에 "체육대회임" 같은 맥락을 써두면 AI가 더 잘 이해해요!</div>
+      </div>
+      <div class="modal-slide">
+        <div class="slide-step">STEP 03 / 05</div>
+        <span class="slide-icon">🤖</span>
+        <div class="slide-title">AI 문구 받기</div>
+        <div class="slide-desc"><b>📋 AI용 텍스트 복사</b> 버튼을 클릭한 뒤<br>AI 채팅창에 붙여넣으세요.<br>활동별로 교육적 요소를 담은 문구를 15개씩 만들어줘요.</div>
+        <div class="slide-tip">💡 문구 형식: [활동명] 문장 으로 한 줄씩 나와요.</div>
+      </div>
+      <div class="modal-slide">
+        <div class="slide-step">STEP 04 / 05</div>
+        <span class="slide-icon">📝</span>
+        <div class="slide-title">문구 뱅크에 저장하기</div>
+        <div class="slide-desc">AI가 만들어준 문구를 <b>문구 뱅크</b>에 붙여넣고<br><b>✨ 형식 정리</b> 버튼을 클릭하세요.<br>특수문자나 불필요한 기호도 자동으로 제거돼요.</div>
+        <div class="slide-tip">💡 활동당 15개 이상 저장하면 30명도 겹치지 않아요!</div>
+      </div>
+      <div class="modal-slide">
+        <div class="slide-step">STEP 05 / 05</div>
+        <span class="slide-icon">✨</span>
+        <div class="slide-title">학생별 조합하기</div>
+        <div class="slide-desc">오른쪽 패널에서 <b>반 선택</b> 후 활동명 형식을<br><b>활동명만</b> 또는 <b>활동명+날짜</b> 중 선택하세요.<br><b>✨ 조합하기</b>를 클릭하면 전체 활동 중 랜덤 2개가 조합돼요!</div>
+        <div class="slide-tip">💡 날짜 포함 예시: 학교폭력예방교육(2026.03.01)에서</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div class="slide-dots" id="dots-ch"></div>
+      <div class="modal-nav">
+        <button class="btn" onclick="prevSlide('ch')">← 이전</button>
+        <button class="btn btn-dark" onclick="nextSlide('ch')">다음 →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 학생관리 가이드 -->
+<div class="modal-overlay" id="guide-student">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-header-title">👥 학생관리 탭 사용 설명서</span>
+      <button class="modal-close" onclick="closeGuide('student')">✕</button>
+    </div>
+    <div class="modal-slides" id="slides-student">
+      <div class="modal-slide active">
+        <div class="slide-step">STEP 01 / 03</div>
+        <span class="slide-icon">⚡</span>
+        <div class="slide-title">자동 생성으로 빠르게 등록</div>
+        <div class="slide-desc"><b>반 번호</b>와 <b>인원수</b>를 입력하고 <b>자동 생성</b> 버튼을 클릭하면<br>학번이 자동으로 생성돼요.<br>학번 형식: 학년+반(2자리)+번호(2자리)<br>예) 1학년 1반 1번 → <b>10101</b></div>
+        <div class="slide-tip">💡 학년은 설정 탭에서 미리 설정해주세요!</div>
+      </div>
+      <div class="modal-slide">
+        <div class="slide-step">STEP 02 / 03</div>
+        <span class="slide-icon">📋</span>
+        <div class="slide-title">붙여넣기로 성별 한 번에 등록</div>
+        <div class="slide-desc">번호와 성별을 아래 형식으로 입력하고 <b>생성</b> 버튼을 클릭하세요.<br><br><b>1 남<br>2 여<br>3 남</b><br><br>학번은 설정한 반 번호 기준으로 자동 완성돼요.</div>
+        <div class="slide-tip">💡 나이스 명렬표에서 복사해서 수정하면 더 빨라요!</div>
+      </div>
+      <div class="modal-slide">
+        <div class="slide-step">STEP 03 / 03</div>
+        <span class="slide-icon">✏️</span>
+        <div class="slide-title">개별 수정 및 반 관리</div>
+        <div class="slide-desc">각 학생의 <b>학번·성별</b>은 직접 수정 가능해요.<br>상단 <b>+ 반 추가</b> 버튼으로 여러 반을 만들 수 있고<br>탭으로 전환하며 관리해요.<br>결번은 <b>삭제</b> 버튼으로 제거하세요.</div>
+        <div class="slide-tip">💡 설정 탭에서 JSON 백업을 해두면 데이터를 안전하게 보관할 수 있어요!</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div class="slide-dots" id="dots-student"></div>
+      <div class="modal-nav">
+        <button class="btn" onclick="prevSlide('student')">← 이전</button>
+        <button class="btn btn-dark" onclick="nextSlide('student')">다음 →</button>
+      </div>
+    </div>
   </div>
 </div>
 
