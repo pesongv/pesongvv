@@ -164,7 +164,10 @@ function renderSeSubjects(){
       <div class="phrase-bank">
         <div class="phrase-bank-hd">
           <span class="phrase-bank-title">📝 문구 뱅크</span>
-          <span class="phrase-badge" id="se-count-${s}">0개</span>
+          <div style="display:flex;gap:5px;align-items:center;">
+            <span class="phrase-badge" id="se-count-${s}">0개</span>
+            <button class="btn btn-danger" style="font-size:10px;padding:2px 8px;" onclick="clearPhrases('se-phrases-${s}','se-count-${s}','${s}','se')">전체 삭제</button>
+          </div>
         </div>
         <div class="phrase-hint">형식: <code>[활동명] 문장</code> 으로 한 줄씩<br>예) <code>[배드민턴수행평가]</code> 기초 기술을 꾸준히 익히며 향상된 수행 능력을 보임.</div>
         <div class="format-row">
@@ -362,7 +365,10 @@ function renderChPanel(type){
     <div class="phrase-bank">
       <div class="phrase-bank-hd">
         <span class="phrase-bank-title">📝 문구 뱅크</span>
-        <span class="phrase-badge" id="ch-count-${type}">0개</span>
+        <div style="display:flex;gap:5px;align-items:center;">
+          <span class="phrase-badge" id="ch-count-${type}">0개</span>
+          <button class="btn btn-danger" style="font-size:10px;padding:2px 8px;" onclick="clearPhrases('ch-phrases-${type}','ch-count-${type}','${type}','ch')">전체 삭제</button>
+        </div>
       </div>
       <div class="phrase-hint">형식: <code>[활동명] 문장</code> 으로 한 줄씩<br>예) <code>[학교폭력예방교육]</code> 공감 능력의 중요성을 인식하며 경청하는 태도를 보임.</div>
       <div class="format-row">
@@ -865,9 +871,19 @@ function formatPhrases(textareaId, countId, key, type){
   showToast(`${result.length}개 문구 정리 완료!`);
 }
 
-// ══════════════════════
-// CSV 내보내기
-// ══════════════════════
+// ── 문구 전체 삭제 ──
+function clearPhrases(textareaId, countId, key, type){
+  const ta=document.getElementById(textareaId);
+  if(!ta||!ta.value.trim())return showToast('삭제할 문구가 없어요!','err');
+  if(!confirm('문구 뱅크를 전체 삭제할까요? 되돌릴 수 없어요!'))return;
+  ta.value='';
+  if(type==='se')saveSeData(key);
+  else saveChData(key);
+  updateCount(textareaId,countId);
+  showToast('문구 뱅크가 삭제됐어요!');
+}
+
+
 function exportExcel(tab){
   const cfg=loadSetting();
   let results, type, subject, activity;
