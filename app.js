@@ -1100,6 +1100,7 @@ document.addEventListener('keydown',e=>{
 });
 
 
+window.onload=()=>{
   loadSetting();
   loadClasses();
   const subjects=S.get('se-subjects',[]);
