@@ -405,7 +405,31 @@ function actPrefix(name,dateStr){
   return displayName+c+' ';
 }
 
-// ── 세특 등급별 조합 ──
+// ── 세특 등급 목록 렌더 ──
+function seLoadGradeList(){
+  const cid=document.getElementById('se-result-class')?.value;
+  const container=document.getElementById('se-grade-list');
+  if(!container)return;
+  if(!cid){container.innerHTML='';return;}
+  const students=getStudentsOfClass(cid);
+  if(!students.length){container.innerHTML='<div style="font-size:13px;color:var(--text-3);">학생이 없어요.</div>';return;}
+  let html='<div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">학생별 등급 설정</div>';
+  html+='<div style="display:flex;flex-direction:column;gap:5px;max-height:220px;overflow-y:auto;">';
+  students.forEach(s=>{
+    html+=`<div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;">
+      <span style="font-size:13px;font-weight:600;">${esc(s.id)}</span>
+      <select id="se-grade-${esc(s.id)}" style="font-size:13px;font-weight:700;padding:4px 6px;width:60px;">
+        <option value="A">A</option>
+        <option value="B" selected>B</option>
+        <option value="C">C</option>
+        <option value="D">D</option>
+      </select>
+    </div>`;
+  });
+  html+='</div>';
+  container.innerHTML=html;
+}
+
 function seRenderCombine(){}
 
 function seCombine(){
@@ -420,12 +444,11 @@ function seCombine(){
   const students=getStudentsOfClass(cid);
   if(!students.length)return showToast('학생을 먼저 등록해주세요!','err');
 
-  // 등급별 사용 인덱스 추적
   const usedMap={};
   actNames.forEach(act=>{usedMap[act]={A:[],B:[],C:[],D:[]};});
 
   const results=students.map(s=>{
-    const grade=s.grade||'B';
+    const grade=document.getElementById('se-grade-'+s.id)?.value||'B';
     const parts=actNames.map(act=>{
       const ps=gradeMap[act][grade]||gradeMap[act]['B']||[];
       if(!ps.length)return '';
@@ -768,17 +791,11 @@ function deleteClass(id){
 }
 
 let sCount=0;
-function makeStudentRow(sid,cid,rn,id,gender,grade){
+function makeStudentRow(sid,cid,rn,id,gender){
   return `<div class="student-row" id="${sid}">
     <span class="s-num">${rn}</span>
     <div><input type="text" placeholder="학번 (예: 10101)" id="${sid}_id" value="${esc(id)}" onblur="saveClasses()"></div>
     <div><select id="${sid}_g" onchange="saveClasses()"><option value="남학생" ${gender==='남학생'?'selected':''}>남학생</option><option value="여학생" ${gender==='여학생'?'selected':''}>여학생</option></select></div>
-    <div><select id="${sid}_grade" onchange="saveClasses()" style="font-size:13px;font-weight:700;">
-      <option value="A" ${grade==='A'?'selected':''}>A</option>
-      <option value="B" ${grade==='B'?'selected':''}>B</option>
-      <option value="C" ${grade==='C'?'selected':''}>C</option>
-      <option value="D" ${grade==='D'?'selected':''}>D</option>
-    </select></div>
     <button class="btn btn-danger" style="font-size:12px;padding:5px 8px;" onclick="removeStudent('${sid}','${cid}')">삭제</button>
   </div>`;
 }
@@ -791,7 +808,7 @@ function addStudent(cid){
   sCount++;
   const sid='s_'+sCount;
   const rn=rows.children.length+1;
-  rows.insertAdjacentHTML('beforeend',makeStudentRow(sid,id2,rn,'','남학생','B'));
+  rows.insertAdjacentHTML('beforeend',makeStudentRow(sid,id2,rn,'','남학생'));
 }
 
 function removeStudent(sid,cid){
@@ -808,8 +825,7 @@ function saveClasses(){
     document.querySelectorAll('#srows_'+cid+' .student-row').forEach(r=>{
       students.push({
         id:r.querySelector('[id$="_id"]')?.value.trim()||'',
-        gender:r.querySelector('[id$="_g"]')?.value||'남학생',
-        grade:r.querySelector('[id$="_grade"]')?.value||'B'
+        gender:r.querySelector('[id$="_g"]')?.value||'남학생'
       });
     });
     cls.push({cid,name:document.getElementById('cname_'+cid)?.value||'반',students});
@@ -843,7 +859,7 @@ function loadClasses(){
       sCount++;
       const sid='s_'+sCount;
       const rows=document.getElementById('srows_'+id);
-      rows.insertAdjacentHTML('beforeend',makeStudentRow(sid,id,i+1,s.id,s.gender||'남학생',s.grade||'B'));
+      rows.insertAdjacentHTML('beforeend',makeStudentRow(sid,id,i+1,s.id,s.gender||'남학생'));
     });
   });
   document.querySelector('.class-tab-btn')?.click();
@@ -852,8 +868,7 @@ function loadClasses(){
 function getStudentsOfClass(cid){
   return Array.from(document.querySelectorAll('#srows_'+cid+' .student-row')).map(r=>({
     id:r.querySelector('[id$="_id"]')?.value.trim()||'',
-    gender:r.querySelector('[id$="_g"]')?.value||'남학생',
-    grade:r.querySelector('[id$="_grade"]')?.value||'B'
+    gender:r.querySelector('[id$="_g"]')?.value||'남학생'
   })).filter(s=>s.id);
 }
 
@@ -878,7 +893,7 @@ function autoGenStudents(){
     const studentId=`${grade}${String(classNum).padStart(2,'0')}${String(i).padStart(2,'0')}`;
     sCount++;
     const sid='s_'+sCount;
-    rows.insertAdjacentHTML('beforeend',makeStudentRow(sid,targetId,i,studentId,'남학생','B'));
+    rows.insertAdjacentHTML('beforeend',makeStudentRow(sid,targetId,i,studentId,'남학생'));
   }
   saveClasses();refreshClassSelects();
   showToast(`${classNum}반 ${count}명 생성 완료!`);
@@ -912,7 +927,7 @@ function pasteGenStudents(){
     const studentId=`${grade}${String(classNum).padStart(2,'0')}${String(p.num).padStart(2,'0')}`;
     sCount++;
     const sid='s_'+sCount;
-    rows.insertAdjacentHTML('beforeend',makeStudentRow(sid,targetId,i+1,studentId,p.gender,'B'));
+    rows.insertAdjacentHTML('beforeend',makeStudentRow(sid,targetId,i+1,studentId,p.gender));
   });
   document.getElementById('paste-students').value='';
   saveClasses();refreshClassSelects();
