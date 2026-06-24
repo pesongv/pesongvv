@@ -424,11 +424,12 @@ function seLoadGradeList(){
   students.forEach(s=>{
     html+=`<div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;">
       <span style="font-size:13px;font-weight:600;">${esc(s.id)}</span>
-      <select id="se-grade-${esc(s.id)}" style="font-size:13px;font-weight:700;padding:4px 6px;width:60px;">
+      <select id="se-grade-${esc(s.id)}" style="font-size:13px;font-weight:700;padding:4px 6px;width:70px;">
         <option value="A">A</option>
         <option value="B" selected>B</option>
         <option value="C">C</option>
         <option value="D">D</option>
+        <option value="미작성">미작성</option>
       </select>
     </div>`;
   });
@@ -455,6 +456,9 @@ function seCombine(){
 
   const results=students.map(s=>{
     const grade=document.getElementById('se-grade-'+s.id)?.value||'B';
+    if(grade==='미작성'){
+      return{studentId:s.id,gender:s.gender,grade,text:''};
+    }
     const parts=actNames.map(act=>{
       const ps=gradeMap[act][grade]||gradeMap[act]['B']||[];
       if(!ps.length)return '';
@@ -712,16 +716,17 @@ function renderCombineResults(results,containerId,showGrade){
     const b=calcBytes(r.text);
     const bc=b>2000?'byte-over':b>1500?'byte-warn':'byte-ok';
     const rid=containerId+'_'+r.studentId;
-    const gradeBadge=showGrade&&r.grade?`<span style="font-size:11px;font-weight:700;background:var(--accent);color:#fff;padding:2px 7px;border-radius:10px;">${r.grade}등급</span>`:'';
-    html+=`<div class="result-card">
+    const gradeBadge=showGrade&&r.grade?`<span style="font-size:11px;font-weight:700;background:${r.grade==='미작성'?'var(--border-strong)':'var(--accent)'};color:${r.grade==='미작성'?'var(--text-3)':'#fff'};padding:2px 7px;border-radius:10px;">${r.grade}</span>`:'';
+    const isEmpty=r.grade==='미작성'||!r.text;
+    html+=`<div class="result-card" style="${isEmpty?'opacity:0.5;':''}">
       <div class="result-card-hd">
-        <div class="result-sid">학번 ${esc(r.studentId)} ${gradeBadge} <span class="byte-chip ${bc}">${b.toLocaleString()} B</span></div>
+        <div class="result-sid">학번 ${esc(r.studentId)} ${gradeBadge} ${!isEmpty?`<span class="byte-chip ${bc}">${b.toLocaleString()} B</span>`:''}</div>
       </div>
-      <div class="result-text" id="${rid}" contenteditable="false">${esc(r.text)}</div>
-      <div class="result-actions">
+      <div class="result-text" id="${rid}" contenteditable="false">${isEmpty?'<span style="color:var(--text-3);font-size:13px;">미작성</span>':esc(r.text)}</div>
+      ${!isEmpty?`<div class="result-actions">
         <button class="btn" style="font-size:12px;padding:5px 10px;" onclick="copyResult('${rid}')">복사</button>
         <button class="btn" style="font-size:12px;padding:5px 10px;" onclick="toggleEdit('${rid}','${containerId}','${esc(r.studentId)}')">수정</button>
-      </div>
+      </div>`:''}
     </div>`;
   });
   container.innerHTML=html;
