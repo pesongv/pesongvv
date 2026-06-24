@@ -32,7 +32,7 @@ function loadSetting(){
 function showToast(msg,type='ok'){
   const t=document.createElement('div');
   const bg=type==='err'?'#d44':'#1a1a18';
-  t.style.cssText=`position:fixed;bottom:24px;right:24px;background:${bg};color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.2);animation:fadeInUp 0.2s ease`;
+  t.style.cssText=`position:fixed;bottom:24px;right:24px;background:${bg};color:#fff;padding:11px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.2);animation:fadeInUp 0.2s ease`;
   t.textContent=msg;
   document.body.appendChild(t);
   setTimeout(()=>t.remove(),2400);
@@ -51,8 +51,9 @@ function updateCount(inputId,countId){
   const n=el.value.split('\n').filter(l=>l.match(/^\[[^\]]+\]/)).length;
   cl.textContent=n+'개';
 }
+
+// ── 문구 파싱 (일반) ──
 function getPhrasesByActivity(txt){
-  // 반환: {actName: [문장, ...], ...}
   const map={};
   txt.split('\n').forEach(l=>{
     const m=l.match(/^\[([^\]]+)\]\s*(.+)/);
@@ -63,13 +64,46 @@ function getPhrasesByActivity(txt){
   });
   return map;
 }
+
+// ── 문구 파싱 (등급별) — [활동명-A], [활동명-B] 등 ──
+function getPhrasesByActivityGrade(txt){
+  // 반환: { actName: { A:[...], B:[...], C:[...], D:[...] } }
+  const map={};
+  txt.split('\n').forEach(l=>{
+    const m=l.match(/^\[([^\]]+)-([ABCD])\]\s*(.+)/i);
+    if(m&&m[3].trim()){
+      const act=m[1].trim();
+      const grade=m[2].toUpperCase();
+      if(!map[act])map[act]={A:[],B:[],C:[],D:[]};
+      if(!map[act][grade])map[act][grade]=[];
+      map[act][grade].push(m[3].trim());
+    }
+  });
+  return map;
+}
+
 function actDateVal(a){
   return (parseInt(a.year)||0)*10000+(parseInt(a.month)||0)*100+(parseInt(a.day)||0);
 }
 
-// ══════════════════════
-// 반 선택 드롭다운 새로고침
-// ══════════════════════
+// ── 오타/중복단어 교정 ──
+function correctText(text){
+  let t=text;
+  // 중복 단어 제거 (연속된 같은 단어)
+  t=t.replace(/(\S+)\s+\1/g,'$1');
+  // 흔한 오타 교정
+  const fixes=[
+    [/이며이며/g,'이며'],[/하며하며/g,'하며'],[/보임보임/g,'보임'],
+    [/하고하고/g,'하고'],[/\.\s*\./g,'.'],[/,\s*,/g,','],
+    [/\s{2,}/g,' '],[/\s+\./g,'.'],[/\s+,/g,','],
+  ];
+  fixes.forEach(([re,rep])=>{t=t.replace(re,rep);});
+  return t.trim();
+}
+
+function actDateVal2(a){return actDateVal(a);}
+
+// ── 반 선택 드롭다운 새로고침 ──
 function refreshClassSelects(){
   ['se-result-class','ch-result-class'].forEach(id=>{
     const sel=document.getElementById(id);
@@ -85,7 +119,6 @@ function refreshClassSelects(){
       sel.appendChild(opt);
     });
   });
-  // 세특 과목 선택도 새로고침
   const subSel=document.getElementById('se-result-subject');
   if(subSel){
     const prev=subSel.value;
@@ -124,7 +157,7 @@ function renderSeSubjects(){
   const panelsEl=document.getElementById('seSubPanels');
   tabsEl.innerHTML=''; panelsEl.innerHTML='';
   if(!subjects.length){
-    tabsEl.innerHTML='<span style="font-size:12px;color:var(--text-3);">과목을 추가해주세요.</span>';
+    tabsEl.innerHTML='<span style="font-size:13px;color:var(--text-3);">과목을 추가해주세요.</span>';
     return;
   }
   subjects.forEach(s=>{
@@ -132,9 +165,7 @@ function renderSeSubjects(){
     btn.className='sub-tab'+(s===activeSeSubject?' active':'');
     btn.textContent=s; btn.onclick=()=>switchSeSubject(s);
     tabsEl.appendChild(btn);
-
     const data=S.get('se-data-'+s,{achievements:[],activities:[],phrases:''});
-    // 마이그레이션: achievement 문자열 → achievements 배열
     if(data.achievement!==undefined&&!data.achievements){
       data.achievements=data.achievement?[data.achievement]:[];
       delete data.achievement;
@@ -143,28 +174,28 @@ function renderSeSubjects(){
     panel.className='sub-panel'+(s===activeSeSubject?' active':'');
     panel.id='se-panel-'+s;
     panel.innerHTML=`
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <span style="font-size:14px;font-weight:700;color:var(--text);">${esc(s)}</span>
-        <button class="btn btn-danger" style="font-size:11px;padding:4px 9px;" onclick="deleteSeSubject('${esc(s)}')">삭제</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <span style="font-size:15px;font-weight:700;color:var(--text);">${esc(s)}</span>
+        <button class="btn btn-danger" style="font-size:12px;padding:5px 10px;" onclick="deleteSeSubject('${esc(s)}')">삭제</button>
       </div>
-      <div style="margin-bottom:14px;">
-        <label style="margin-bottom:7px;display:block;">성취기준</label>
+      <div style="margin-bottom:16px;">
+        <label style="margin-bottom:8px;display:block;">성취기준</label>
         <div class="activity-list" id="se-ach-list-${s}"></div>
         <button class="add-row-btn" onclick="addSeAch('${s}')">+ 성취기준 추가</button>
       </div>
-      <div style="margin-bottom:8px;">
-        <label style="margin-bottom:7px;display:block;">활동 목록</label>
+      <div style="margin-bottom:10px;">
+        <label style="margin-bottom:8px;display:block;">활동 목록</label>
         <div class="activity-list" id="se-acts-${s}"></div>
         <button class="add-row-btn" onclick="addSeActivity('${s}')">+ 활동 추가</button>
       </div>
-      <div class="ai-box" style="margin-top:14px;">
+      <div class="ai-box" style="margin-top:16px;">
         <div class="ai-box-title">🤖 AI용 텍스트</div>
         <div class="ai-preview" id="se-preview-${s}">미리보기 버튼을 눌러주세요.</div>
         <div class="btn-row">
-          <button class="btn" style="font-size:11px;" onclick="updateSePreview('${s}')">미리보기</button>
-          <button class="btn btn-dark" style="font-size:11px;" onclick="copySeAiText('${s}')">📋 AI용 텍스트 복사</button>
+          <button class="btn" style="font-size:12px;" onclick="updateSePreview('${s}')">미리보기</button>
+          <button class="btn btn-dark" style="font-size:12px;" onclick="copySeAiText('${s}')">📋 AI용 텍스트 복사</button>
         </div>
-        <div style="font-size:11px;color:var(--text-3);margin-top:8px;">💡 복사 후 AI 채팅창에 붙여넣으면 문구를 받을 수 있어요!</div>
+        <div style="font-size:12px;color:var(--text-3);margin-top:8px;">💡 복사 후 AI 채팅창에 붙여넣으면 문구를 받을 수 있어요!</div>
       </div>
       <div class="divider"></div>
       <div class="phrase-bank">
@@ -172,15 +203,15 @@ function renderSeSubjects(){
           <span class="phrase-bank-title">📝 문구 뱅크</span>
           <div style="display:flex;gap:5px;align-items:center;">
             <span class="phrase-badge" id="se-count-${s}">0개</span>
-            <button class="btn btn-danger" style="font-size:10px;padding:2px 8px;" onclick="clearPhrases('se-phrases-${s}','se-count-${s}','${s}','se')">전체 삭제</button>
+            <button class="btn btn-danger" style="font-size:11px;padding:2px 8px;" onclick="clearPhrases('se-phrases-${s}','se-count-${s}','${s}','se')">전체 삭제</button>
           </div>
         </div>
-        <div class="phrase-hint">형식: <code>[활동명] 문장</code> 으로 한 줄씩<br>예) <code>[배드민턴수행평가]</code> 기초 기술을 꾸준히 익히며 향상된 수행 능력을 보임.</div>
+        <div class="phrase-hint">등급별 형식: <code>[활동명-A] 문장</code> / <code>[활동명-B] 문장</code><br>예) <code>[배드민턴수행평가-A]</code> 탁월한 기초 기술을 바탕으로 높은 수행 능력을 보임.</div>
         <div class="format-row">
-          <button class="btn" style="font-size:11px;" onclick="formatPhrases('se-phrases-${s}','se-count-${s}','${s}','se')">✨ 형식 정리</button>
-          <span style="font-size:11px;color:var(--text-3);">AI 문구를 붙여넣고 클릭하세요</span>
+          <button class="btn" style="font-size:12px;" onclick="formatPhrases('se-phrases-${s}','se-count-${s}','${s}','se')">✨ 형식 정리</button>
+          <span style="font-size:12px;color:var(--text-3);">AI 문구를 붙여넣고 클릭하세요</span>
         </div>
-        <textarea id="se-phrases-${s}" placeholder="AI에게 받은 문구를 여기에 붙여넣으세요..." oninput="saveSeData('${s}')" style="min-height:150px;">${esc(data.phrases)}</textarea>
+        <textarea id="se-phrases-${s}" placeholder="AI에게 받은 문구를 여기에 붙여넣으세요..." oninput="saveSeData('${s}')" style="min-height:160px;">${esc(data.phrases)}</textarea>
       </div>`;
     panelsEl.appendChild(panel);
     renderSeAchievements(s, data.achievements||[]);
@@ -220,21 +251,15 @@ let seAchCount=0;
 function makeSeAchRow(uid,val){
   return `<div class="se-act-row" id="se-ach-row-${uid}" style="grid-template-columns:1fr auto;">
     <input type="text" id="se-ach-${uid}" value="${esc(val||'')}" placeholder="예: 운동 수행 능력을 향상시키고 체력을 기른다." oninput="saveSeFromAchRow(this)">
-    <button class="btn btn-danger" style="font-size:11px;padding:4px 8px;" onclick="removeSeAch('${uid}',this)">삭제</button>
+    <button class="btn btn-danger" style="font-size:12px;padding:5px 9px;" onclick="removeSeAch('${uid}',this)">삭제</button>
   </div>`;
 }
-
 function getSeSubjectFromAchRow(el){
   let node=el;
   while(node&&!node.id?.startsWith('se-panel-'))node=node.parentElement;
   return node?.id?.replace('se-panel-','');
 }
-
-function saveSeFromAchRow(el){
-  const s=getSeSubjectFromAchRow(el);
-  if(s)saveSeData(s);
-}
-
+function saveSeFromAchRow(el){const s=getSeSubjectFromAchRow(el);if(s)saveSeData(s);}
 function addSeAch(s){
   seAchCount++;
   const uid='seach_'+seAchCount;
@@ -243,29 +268,18 @@ function addSeAch(s){
   container.insertAdjacentHTML('beforeend',makeSeAchRow(uid,''));
   saveSeData(s);
 }
-
 function removeSeAch(uid,btn){
   document.getElementById('se-ach-row-'+uid)?.remove();
   const s=getSeSubjectFromAchRow(btn);
   if(s)saveSeData(s);
 }
-
 function renderSeAchievements(s,achs){
   const container=document.getElementById('se-ach-list-'+s);
   if(!container)return;
   container.innerHTML='';
-  if(!achs||!achs.length){
-    // 기본 1개
-    seAchCount++;
-    container.insertAdjacentHTML('beforeend',makeSeAchRow('seach_'+seAchCount,''));
-    return;
-  }
-  achs.forEach(v=>{
-    seAchCount++;
-    container.insertAdjacentHTML('beforeend',makeSeAchRow('seach_'+seAchCount,v));
-  });
+  if(!achs||!achs.length){seAchCount++;container.insertAdjacentHTML('beforeend',makeSeAchRow('seach_'+seAchCount,''));return;}
+  achs.forEach(v=>{seAchCount++;container.insertAdjacentHTML('beforeend',makeSeAchRow('seach_'+seAchCount,v));});
 }
-
 function getSeAchievements(s){
   const container=document.getElementById('se-ach-list-'+s);
   if(!container)return[];
@@ -275,7 +289,7 @@ function getSeAchievements(s){
   }).filter(Boolean);
 }
 
-
+// ── 세특 활동 행 ──
 let seActCount=0;
 function makeSeActRow(uid,act){
   return `<div class="se-act-row" id="se-act-row-${uid}">
@@ -284,37 +298,26 @@ function makeSeActRow(uid,act){
       <input type="text" id="se-act-name-${uid}" value="${esc(act.name||'')}" placeholder="예: 배드민턴 수행평가" oninput="saveSeFromRow(this)">
     </div>
     <div>
-      <label>활동설명 <span style="font-size:10px;color:var(--text-3);text-transform:none;font-weight:400;">(선택, AI 맥락용)</span></label>
+      <label>활동설명 <span style="font-size:11px;color:var(--text-3);text-transform:none;font-weight:400;">(선택, AI 맥락용)</span></label>
       <textarea id="se-act-desc-${uid}" placeholder="AI가 맥락을 파악할 수 있게 간단히 적어주세요..." oninput="saveSeFromRow(this)">${esc(act.desc||'')}</textarea>
     </div>
-    <div style="padding-top:18px;">
-      <button class="btn btn-danger" style="font-size:11px;padding:4px 8px;white-space:nowrap;" onclick="removeSeActivity(this,'${uid}')">삭제</button>
+    <div style="padding-top:20px;">
+      <button class="btn btn-danger" style="font-size:12px;padding:5px 9px;white-space:nowrap;" onclick="removeSeActivity(this,'${uid}')">삭제</button>
     </div>
   </div>`;
 }
-
 function getSeSubjectFromRow(el){
   let node=el;
   while(node&&!node.id?.startsWith('se-panel-'))node=node.parentElement;
   return node?.id?.replace('se-panel-','');
 }
-
-function saveSeFromRow(el){
-  const s=getSeSubjectFromRow(el);
-  if(s)saveSeData(s);
-}
-
+function saveSeFromRow(el){const s=getSeSubjectFromRow(el);if(s)saveSeData(s);}
 function renderSeActivities(s,acts){
   const container=document.getElementById('se-acts-'+s);
   if(!container)return;
   container.innerHTML='';
-  (acts||[]).forEach(act=>{
-    seActCount++;
-    const uid='seact_'+seActCount;
-    container.insertAdjacentHTML('beforeend',makeSeActRow(uid,act));
-  });
+  (acts||[]).forEach(act=>{seActCount++;const uid='seact_'+seActCount;container.insertAdjacentHTML('beforeend',makeSeActRow(uid,act));});
 }
-
 function addSeActivity(s){
   seActCount++;
   const uid='seact_'+seActCount;
@@ -323,13 +326,11 @@ function addSeActivity(s){
   container.insertAdjacentHTML('beforeend',makeSeActRow(uid,{name:'',desc:''}));
   saveSeData(s);
 }
-
 function removeSeActivity(btn,uid){
   document.getElementById('se-act-row-'+uid)?.remove();
   const s=getSeSubjectFromRow(btn);
   if(s)saveSeData(s);
 }
-
 function getSeActivities(s){
   const container=document.getElementById('se-acts-'+s);
   if(!container)return[];
@@ -350,10 +351,12 @@ ${achText}
 활동 목록:
 ${actText}
 
-위 내용을 바탕으로 중학교 생활기록부 세특 문구를 활동별로 작성해주세요.
+위 내용을 바탕으로 중학교 생활기록부 세특 문구를 활동별·등급별로 작성해주세요.
 
 원칙:
-- 관찰자 시점 / 개조식(~함. ~보임.) / 주어 없이 / 긍정적 표현
+- 관찰자 시점 / 주어 없이 / 긍정적 표현
+- 단순히 ~보임.으로 끝내지 말고 ~고, ~며, ~다 등 연결어미를 활용해 풍부하게 작성
+- 구체적인 행동과 교육적 성취를 2~3문장으로 표현
 
 지양 표현 (사용 금지):
 ~라고 느낌, ~이해함, ~생각함, ~생각해 봄, ~다짐함, ~배움, ~알게 됨, ~나타냄, ~드러냄
@@ -361,11 +364,21 @@ ${actText}
 대체 표현 (적극 활용):
 ~활동지를 작성함, ~발표함, ~기록함, ~표현함, ~하는 모습을 보임, ~능력이 뛰어남,
 ~대해 토의함, ~비교함, ~대안을 제시함, ~두각을 보임, ~한 모습이 인상적임,
-~한 모습이 돋보임, ~심도 있게 탐색함, ~포부를 밝힘, ~보임
+~한 모습이 돋보임, ~심도 있게 탐색함, ~포부를 밝힘
 
-각 활동마다 [활동명] 형식으로 시작하여 해당 활동에서 나올 수 있는
-다양한 교육적 요소를 담은 문구를 15개씩 작성해주세요.
-예시) [배드민턴수행평가] 기초 기술을 꾸준히 익히며 향상된 수행 능력을 보임.
+등급 기준:
+- A등급: 탁월한 성취와 주도적 역할 중심
+- B등급: 우수한 참여와 성실한 수행 중심
+- C등급: 꾸준한 노력과 성장 가능성 중심
+- D등급: 발전 가능성과 긍정적 변화 중심 (부정적 표현 절대 금지)
+
+각 활동마다 [활동명-A], [활동명-B], [활동명-C], [활동명-D] 형식으로
+등급별 문구를 각 30개씩 작성해주세요.
+예시)
+[배드민턴수행평가-A] 탁월한 기초 기술을 바탕으로 경기 상황에 맞는 전술을 구사하며 높은 수행 능력을 보임.
+[배드민턴수행평가-B] 기초 기술을 성실히 익히며 향상된 수행 능력을 꾸준히 보임.
+[배드민턴수행평가-C] 반복 연습을 통해 기초 기술을 점진적으로 향상시키는 모습이 인상적임.
+[배드민턴수행평가-D] 기초 기술 습득에 꾸준히 노력하며 발전 가능성을 보임.
 
 작성된 문구 전체를 코드블록 없이 깔끔하게 출력해주세요.`;
 }
@@ -382,16 +395,17 @@ function hasBatchim(str){
   if(code<0xAC00||code>0xD7A3)return false;
   return (code-0xAC00)%28!==0;
 }
-function actPrefix(name){
+function actPrefix(name,dateStr){
+  const displayName=dateStr?`${name}(${dateStr})`:name;
   const batchim=hasBatchim(name);
   const connectors=batchim
     ?['에서','을 통해','에 참여하여','활동에서','을 마치며','시간을 통해']
     :['에서','를 통해','에 참여하여','활동에서','를 마치며','시간을 통해'];
   const c=connectors[Math.floor(Math.random()*connectors.length)];
-  return name+c+' ';
+  return displayName+c+' ';
 }
 
-
+// ── 세특 등급별 조합 ──
 function seRenderCombine(){}
 
 function seCombine(){
@@ -400,34 +414,35 @@ function seCombine(){
   if(!cid)return showToast('반을 선택해주세요!','err');
   if(!subj)return showToast('과목을 선택해주세요!','err');
   const phrases=S.get('se-data-'+subj,{phrases:''}).phrases;
-  const actMap=getPhrasesByActivity(phrases);
-  const actNames=Object.keys(actMap);
-  if(!actNames.length)return showToast('문구 뱅크에 문구를 먼저 등록해주세요!','err');
+  const gradeMap=getPhrasesByActivityGrade(phrases);
+  const actNames=Object.keys(gradeMap);
+  if(!actNames.length)return showToast('등급별 문구가 없어요! [활동명-A] 형식으로 등록해주세요.','err');
   const students=getStudentsOfClass(cid);
   if(!students.length)return showToast('학생을 먼저 등록해주세요!','err');
 
-  // 활동별 사용된 문장 인덱스 추적
-  const seUsedMap={};
-  actNames.forEach(act=>{seUsedMap[act]=[];});
+  // 등급별 사용 인덱스 추적
+  const usedMap={};
+  actNames.forEach(act=>{usedMap[act]={A:[],B:[],C:[],D:[]};});
 
   const results=students.map(s=>{
-    const shuffled=[...actNames].sort(()=>Math.random()-0.5);
-    const chosen=shuffled.slice(0,Math.min(2,shuffled.length));
-    const parts=chosen.map(act=>{
-      const ps=actMap[act];
-      let avail=ps.map((_,i)=>i).filter(i=>!seUsedMap[act].includes(i));
-      if(avail.length<2){seUsedMap[act]=[];avail=ps.map((_,i)=>i);}
-      const shuffledAvail=[...avail].sort(()=>Math.random()-0.5);
-      const picked=shuffledAvail.slice(0,Math.min(2,shuffledAvail.length));
-      picked.forEach(i=>seUsedMap[act].push(i));
-      return actPrefix(act)+picked.map(i=>ps[i]).join(' ');
-    });
-    return{studentId:s.id,gender:s.gender,text:parts.join('\n')};
+    const grade=s.grade||'B';
+    const parts=actNames.map(act=>{
+      const ps=gradeMap[act][grade]||gradeMap[act]['B']||[];
+      if(!ps.length)return '';
+      let avail=ps.map((_,i)=>i).filter(i=>!usedMap[act][grade].includes(i));
+      if(avail.length<1){usedMap[act][grade]=[];avail=ps.map((_,i)=>i);}
+      const shuffled=[...avail].sort(()=>Math.random()-0.5);
+      const idx=shuffled[0];
+      usedMap[act][grade].push(idx);
+      return actPrefix(act)+ps[idx];
+    }).filter(Boolean);
+    const raw=parts.join('\n');
+    return{studentId:s.id,gender:s.gender,grade,text:correctText(raw)};
   });
 
   window._seResults=results;
   S.set('se-last-results',results);
-  renderCombineResults(results,'se-combine-results');
+  renderCombineResults(results,'se-combine-results',true);
   document.getElementById('se-export-box').style.display='block';
   showToast('조합 완료!');
 }
@@ -448,19 +463,19 @@ function renderChPanel(type){
   const panelsEl=document.getElementById('chPanels');
   const data=S.get('ch-data-'+type,{activities:[],phrases:''});
   panelsEl.innerHTML=`
-    <div style="margin-bottom:8px;">
-      <label style="margin-bottom:7px;display:block;">활동 목록 <span style="font-size:10px;color:var(--text-3);font-weight:400;text-transform:none;letter-spacing:0;">날짜순 자동 정렬</span></label>
+    <div style="margin-bottom:10px;">
+      <label style="margin-bottom:8px;display:block;">활동 목록 <span style="font-size:11px;color:var(--text-3);font-weight:400;text-transform:none;letter-spacing:0;">날짜순 자동 정렬</span></label>
       <div class="activity-list" id="ch-acts-${type}"></div>
       <button class="add-row-btn" onclick="addChActivity('${type}')">+ 활동 추가</button>
     </div>
-    <div class="ai-box" style="margin-top:14px;">
+    <div class="ai-box" style="margin-top:16px;">
       <div class="ai-box-title">🤖 AI용 텍스트</div>
       <div class="ai-preview" id="ch-preview-${type}">미리보기 버튼을 눌러주세요.</div>
       <div class="btn-row">
-        <button class="btn" style="font-size:11px;" onclick="updateChPreview('${type}')">미리보기</button>
-        <button class="btn btn-dark" style="font-size:11px;" onclick="copyChAiText('${type}')">📋 AI용 텍스트 복사</button>
+        <button class="btn" style="font-size:12px;" onclick="updateChPreview('${type}')">미리보기</button>
+        <button class="btn btn-dark" style="font-size:12px;" onclick="copyChAiText('${type}')">📋 AI용 텍스트 복사</button>
       </div>
-      <div style="font-size:11px;color:var(--text-3);margin-top:8px;">💡 복사 후 AI 채팅창에 붙여넣으면 문구를 받을 수 있어요!</div>
+      <div style="font-size:12px;color:var(--text-3);margin-top:8px;">💡 복사 후 AI 채팅창에 붙여넣으면 문구를 받을 수 있어요!</div>
     </div>
     <div class="divider"></div>
     <div class="phrase-bank">
@@ -468,15 +483,15 @@ function renderChPanel(type){
         <span class="phrase-bank-title">📝 문구 뱅크</span>
         <div style="display:flex;gap:5px;align-items:center;">
           <span class="phrase-badge" id="ch-count-${type}">0개</span>
-          <button class="btn btn-danger" style="font-size:10px;padding:2px 8px;" onclick="clearPhrases('ch-phrases-${type}','ch-count-${type}','${type}','ch')">전체 삭제</button>
+          <button class="btn btn-danger" style="font-size:11px;padding:2px 8px;" onclick="clearPhrases('ch-phrases-${type}','ch-count-${type}','${type}','ch')">전체 삭제</button>
         </div>
       </div>
       <div class="phrase-hint">형식: <code>[활동명] 문장</code> 으로 한 줄씩<br>예) <code>[학교폭력예방교육]</code> 공감 능력의 중요성을 인식하며 경청하는 태도를 보임.</div>
       <div class="format-row">
-        <button class="btn" style="font-size:11px;" onclick="formatPhrases('ch-phrases-${type}','ch-count-${type}','${type}','ch')">✨ 형식 정리</button>
-        <span style="font-size:11px;color:var(--text-3);">AI 문구를 붙여넣고 클릭하세요</span>
+        <button class="btn" style="font-size:12px;" onclick="formatPhrases('ch-phrases-${type}','ch-count-${type}','${type}','ch')">✨ 형식 정리</button>
+        <span style="font-size:12px;color:var(--text-3);">AI 문구를 붙여넣고 클릭하세요</span>
       </div>
-      <textarea id="ch-phrases-${type}" placeholder="AI에게 받은 문구를 붙여넣으세요..." oninput="saveChData('${type}')" style="min-height:150px;">${esc(data.phrases)}</textarea>
+      <textarea id="ch-phrases-${type}" placeholder="AI에게 받은 문구를 붙여넣으세요..." oninput="saveChData('${type}')" style="min-height:160px;">${esc(data.phrases)}</textarea>
     </div>`;
   renderChActivities(type, data.activities||[]);
   updateCount('ch-phrases-'+type,'ch-count-'+type);
@@ -487,7 +502,7 @@ function saveChData(type){
   updateCount('ch-phrases-'+type,'ch-count-'+type);
 }
 
-// ── 창체 활동 행 (날짜 있음) ──
+// ── 창체 활동 행 ──
 let chActCount=0;
 function makeChActRow(uid,act){
   const cfg=S.get('cfg',{year:'2026'});
@@ -509,26 +524,20 @@ function makeChActRow(uid,act){
       <input type="text" id="ch-act-name-${uid}" value="${esc(act.name||'')}" placeholder="예: 학교폭력예방교육" oninput="saveChFromRow(this)">
     </div>
     <div>
-      <label>활동설명 <span style="font-size:10px;color:var(--text-3);text-transform:none;font-weight:400;">(선택)</span></label>
+      <label>활동설명 <span style="font-size:11px;color:var(--text-3);text-transform:none;font-weight:400;">(선택)</span></label>
       <textarea id="ch-act-desc-${uid}" placeholder="AI 맥락 파악용..." oninput="saveChFromRow(this)">${esc(act.desc||'')}</textarea>
     </div>
-    <div style="padding-top:18px;">
-      <button class="btn btn-danger" style="font-size:11px;padding:4px 8px;white-space:nowrap;" onclick="removeChActivity(this,'${uid}')">삭제</button>
+    <div style="padding-top:20px;">
+      <button class="btn btn-danger" style="font-size:12px;padding:5px 9px;white-space:nowrap;" onclick="removeChActivity(this,'${uid}')">삭제</button>
     </div>
   </div>`;
 }
-
 function getChTypeFromRow(el){
   let node=el;
   while(node&&!node.id?.startsWith('ch-acts-'))node=node.parentElement;
   return node?.id?.replace('ch-acts-','');
 }
-
-function saveChFromRow(el){
-  const type=getChTypeFromRow(el);
-  if(type)saveChData(type);
-}
-
+function saveChFromRow(el){const type=getChTypeFromRow(el);if(type)saveChData(type);}
 function sortAndSaveChActs(el){
   const type=getChTypeFromRow(el);
   if(!type)return;
@@ -538,20 +547,13 @@ function sortAndSaveChActs(el){
   S.set('ch-data-'+type,{activities:acts,phrases:document.getElementById('ch-phrases-'+type)?.value||''});
   renderChActivities(type,acts);
 }
-
 function renderChActivities(type,acts){
   const container=document.getElementById('ch-acts-'+type);
   if(!container)return;
   container.innerHTML='';
-  // 불러올 때도 날짜순 정렬
   const sorted=[...(acts||[])].sort((a,b)=>actDateVal(a)-actDateVal(b));
-  sorted.forEach(act=>{
-    chActCount++;
-    const uid='chact_'+chActCount;
-    container.insertAdjacentHTML('beforeend',makeChActRow(uid,act));
-  });
+  sorted.forEach(act=>{chActCount++;const uid='chact_'+chActCount;container.insertAdjacentHTML('beforeend',makeChActRow(uid,act));});
 }
-
 function addChActivity(type){
   const cfg=S.get('cfg',{year:'2026'});
   const y=parseInt(cfg.year)||2026;
@@ -562,13 +564,11 @@ function addChActivity(type){
   container.insertAdjacentHTML('beforeend',makeChActRow(uid,{year:y,month:3,day:1,name:'',desc:''}));
   saveChData(type);
 }
-
 function removeChActivity(btn,uid){
   document.getElementById('ch-act-row-'+uid)?.remove();
   const type=getChTypeFromRow(btn);
   if(type)saveChData(type);
 }
-
 function getChActivities(type){
   const container=document.getElementById('ch-acts-'+type);
   if(!container)return[];
@@ -595,7 +595,9 @@ ${actText}
 위 활동을 바탕으로 창체 특기사항 문구를 활동별로 작성해주세요.
 
 원칙:
-- 관찰자 시점 / 개조식(~함. ~보임.) / 주어 없이 / 긍정적 표현
+- 관찰자 시점 / 주어 없이 / 긍정적 표현
+- 단순히 ~보임.으로 끝내지 말고 ~고, ~며, ~다 등 연결어미를 활용해 풍부하게 작성
+- 구체적인 행동과 교육적 성취를 2~3문장으로 표현
 
 지양 표현 (사용 금지):
 ~라고 느낌, ~이해함, ~생각함, ~생각해 봄, ~다짐함, ~배움, ~알게 됨, ~나타냄, ~드러냄
@@ -603,11 +605,11 @@ ${actText}
 대체 표현 (적극 활용):
 ~활동지를 작성함, ~발표함, ~기록함, ~표현함, ~하는 모습을 보임, ~능력이 뛰어남,
 ~대해 토의함, ~비교함, ~대안을 제시함, ~두각을 보임, ~한 모습이 인상적임,
-~한 모습이 돋보임, ~심도 있게 탐색함, ~포부를 밝힘, ~보임
+~한 모습이 돋보임, ~심도 있게 탐색함, ~포부를 밝힘
 
 각 활동마다 [활동명] 형식으로 시작하여 해당 활동에서 나올 수 있는
 다양한 교육적 요소(공감, 협력, 참여태도, 책임감, 창의성 등)를 담은 문구를 15개씩 작성해주세요.
-예시) [학교폭력예방교육] 공감 능력의 중요성을 인식하며 경청하는 태도를 보임.
+예시) [학교폭력예방교육] 공감 능력의 중요성을 인식하며 타인의 감정을 존중하는 태도를 꾸준히 보임.
 
 작성된 문구 전체를 코드블록 없이 깔끔하게 출력해주세요.`;
 }
@@ -625,24 +627,20 @@ function chCombine(){
   const cid=document.getElementById('ch-result-class')?.value;
   if(!cid)return showToast('반을 선택해주세요!','err');
   const type=activeChTab;
+  const showDate=document.getElementById('ch-date-format')?.value==='with-date';
   const phrases=S.get('ch-data-'+type,{phrases:''}).phrases;
   const actMap=getPhrasesByActivity(phrases);
   const actNames=Object.keys(actMap);
   if(!actNames.length)return showToast('문구 뱅크에 문구를 먼저 등록해주세요!','err');
-
-  // 활동 날짜 순서 가져오기 (창체는 날짜순)
   const storedActs=S.get('ch-data-'+type,{activities:[]}).activities;
   const sortedActNames=[...storedActs].sort((a,b)=>actDateVal(a)-actDateVal(b)).map(a=>a.name).filter(n=>actMap[n]);
-  // 문구 뱅크에만 있는 것도 포함
   actNames.forEach(n=>{if(!sortedActNames.includes(n))sortedActNames.push(n);});
-
+  const actDateMap={};
+  storedActs.forEach(a=>{if(a.name)actDateMap[a.name]=`${a.year}.${String(a.month).padStart(2,'0')}.${String(a.day).padStart(2,'0')}`;});
   const students=getStudentsOfClass(cid);
   if(!students.length)return showToast('학생을 먼저 등록해주세요!','err');
-
-  // 활동별 사용된 문장 인덱스 추적
   const chUsedMap={};
   actNames.forEach(act=>{chUsedMap[act]=[];});
-
   const results=students.map(s=>{
     const shuffled=[...sortedActNames].sort(()=>Math.random()-0.5);
     const chosen=shuffled.slice(0,Math.min(2,shuffled.length));
@@ -654,20 +652,21 @@ function chCombine(){
       const shuffledAvail=[...avail].sort(()=>Math.random()-0.5);
       const picked=shuffledAvail.slice(0,Math.min(2,shuffledAvail.length));
       picked.forEach(i=>chUsedMap[act].push(i));
-      return actPrefix(act)+picked.map(i=>ps[i]).join(' ');
+      const dateStr=showDate?actDateMap[act]:null;
+      return actPrefix(act,dateStr)+picked.map(i=>ps[i]).join(' ');
     });
-    return{studentId:s.id,gender:s.gender,text:parts.join('\n')};
+    const raw=parts.join('\n');
+    return{studentId:s.id,gender:s.gender,text:correctText(raw)};
   });
-
   window._chResults=results;
   S.set('ch-last-results',results);
-  renderCombineResults(results,'ch-combine-results');
+  renderCombineResults(results,'ch-combine-results',false);
   document.getElementById('ch-export-box').style.display='block';
   showToast('조합 완료!');
 }
 
 // ── 공통 결과 렌더 ──
-function renderCombineResults(results,containerId){
+function renderCombineResults(results,containerId,showGrade){
   const container=document.getElementById(containerId);
   if(!results.length){container.innerHTML='';return;}
   let html='';
@@ -675,14 +674,15 @@ function renderCombineResults(results,containerId){
     const b=calcBytes(r.text);
     const bc=b>2000?'byte-over':b>1500?'byte-warn':'byte-ok';
     const rid=containerId+'_'+r.studentId;
+    const gradeBadge=showGrade&&r.grade?`<span style="font-size:11px;font-weight:700;background:var(--accent);color:#fff;padding:2px 7px;border-radius:10px;">${r.grade}등급</span>`:'';
     html+=`<div class="result-card">
       <div class="result-card-hd">
-        <div class="result-sid">학번 ${esc(r.studentId)} <span class="byte-chip ${bc}">${b.toLocaleString()} B</span></div>
+        <div class="result-sid">학번 ${esc(r.studentId)} ${gradeBadge} <span class="byte-chip ${bc}">${b.toLocaleString()} B</span></div>
       </div>
       <div class="result-text" id="${rid}" contenteditable="false">${esc(r.text)}</div>
       <div class="result-actions">
-        <button class="btn" style="font-size:11px;padding:4px 9px;" onclick="copyResult('${rid}')">복사</button>
-        <button class="btn" style="font-size:11px;padding:4px 9px;" onclick="toggleEdit('${rid}','${containerId}','${esc(r.studentId)}')">수정</button>
+        <button class="btn" style="font-size:12px;padding:5px 10px;" onclick="copyResult('${rid}')">복사</button>
+        <button class="btn" style="font-size:12px;padding:5px 10px;" onclick="toggleEdit('${rid}','${containerId}','${esc(r.studentId)}')">수정</button>
       </div>
     </div>`;
   });
@@ -701,36 +701,23 @@ function toggleEdit(rid,containerId,studentId){
   const isEditing=el.contentEditable==='true';
   if(isEditing){
     el.contentEditable='false';
-    // 저장
     const newText=el.innerText;
     const arr=containerId.startsWith('se')?window._seResults:window._chResults;
     const r=arr?.find(x=>x.studentId===studentId);
-    if(r){
-      r.text=newText;
-      const key=containerId.startsWith('se')?'se-last-results':'ch-last-results';
-      S.set(key,arr);
-    }
-    // 바이트 업데이트
+    if(r){r.text=newText;S.set(containerId.startsWith('se')?'se-last-results':'ch-last-results',arr);}
     const card=el.closest('.result-card');
     const chip=card?.querySelector('.byte-chip');
-    if(chip){
-      const b=calcBytes(newText);
-      chip.textContent=b.toLocaleString()+' B';
-      chip.className='byte-chip '+(b>2000?'byte-over':b>1500?'byte-warn':'byte-ok');
-    }
-    const btn=el.parentElement.querySelector('button:last-child');
-    if(btn)btn.textContent='수정';
+    if(chip){const b=calcBytes(newText);chip.textContent=b.toLocaleString()+' B';chip.className='byte-chip '+(b>2000?'byte-over':b>1500?'byte-warn':'byte-ok');}
+    el.parentElement.querySelector('button:last-child').textContent='수정';
     showToast('저장됐어요!');
   } else {
-    el.contentEditable='true';
-    el.focus();
-    const btn=el.parentElement.querySelector('button:last-child');
-    if(btn)btn.textContent='저장';
+    el.contentEditable='true';el.focus();
+    el.parentElement.querySelector('button:last-child').textContent='저장';
   }
 }
 
 // ══════════════════════
-// 학생관리
+// 학생관리 (등급 포함)
 // ══════════════════════
 let classCount=0, activeClassId=null;
 
@@ -747,9 +734,9 @@ function addClass(name){
   const panel=document.createElement('div');
   panel.className='class-panel'; panel.id='cpanel_'+id;
   panel.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <input class="class-name-input" id="cname_${id}" value="${esc(cn)}" onchange="updateClassName('${id}')">
-      <button class="btn btn-danger" style="font-size:11px;padding:4px 9px;" onclick="deleteClass('${id}')">반 삭제</button>
+      <button class="btn btn-danger" style="font-size:12px;padding:5px 10px;" onclick="deleteClass('${id}')">반 삭제</button>
     </div>
     <div class="student-list" id="srows_${id}"></div>
     <button class="add-student-btn" onclick="addStudent('${id}')">+ 학생 추가</button>`;
@@ -767,39 +754,44 @@ function switchClass(id){
   document.getElementById('ctab_'+id)?.classList.add('active');
   document.getElementById('cpanel_'+id)?.classList.add('active');
 }
-
 function updateClassName(id){
   const name=document.getElementById('cname_'+id)?.value.trim()||'반';
   document.getElementById('ctab_'+id).textContent=name;
-  saveClasses();
-  refreshClassSelects();
+  saveClasses();refreshClassSelects();
 }
-
 function deleteClass(id){
   if(!confirm('이 반을 삭제할까요?'))return;
   document.getElementById('ctab_'+id)?.remove();
   document.getElementById('cpanel_'+id)?.remove();
   document.querySelector('.class-tab-btn')?.click();
-  saveClasses();
-  refreshClassSelects();
+  saveClasses();refreshClassSelects();
 }
 
 let sCount=0;
+function makeStudentRow(sid,cid,rn,id,gender,grade){
+  return `<div class="student-row" id="${sid}">
+    <span class="s-num">${rn}</span>
+    <div><input type="text" placeholder="학번 (예: 10101)" id="${sid}_id" value="${esc(id)}" onblur="saveClasses()"></div>
+    <div><select id="${sid}_g" onchange="saveClasses()"><option value="남학생" ${gender==='남학생'?'selected':''}>남학생</option><option value="여학생" ${gender==='여학생'?'selected':''}>여학생</option></select></div>
+    <div><select id="${sid}_grade" onchange="saveClasses()" style="font-size:13px;font-weight:700;">
+      <option value="A" ${grade==='A'?'selected':''}>A</option>
+      <option value="B" ${grade==='B'?'selected':''}>B</option>
+      <option value="C" ${grade==='C'?'selected':''}>C</option>
+      <option value="D" ${grade==='D'?'selected':''}>D</option>
+    </select></div>
+    <button class="btn btn-danger" style="font-size:12px;padding:5px 8px;" onclick="removeStudent('${sid}','${cid}')">삭제</button>
+  </div>`;
+}
+
 function addStudent(cid){
   const id2=cid||activeClassId;
   if(!id2)return;
   const rows=document.getElementById('srows_'+id2);
   if(!rows)return;
-  const n=++sCount, sid='s_'+n;
+  sCount++;
+  const sid='s_'+sCount;
   const rn=rows.children.length+1;
-  const div=document.createElement('div');
-  div.className='student-row'; div.id=sid;
-  div.innerHTML=`
-    <span class="s-num">${rn}</span>
-    <div><input type="text" placeholder="학번 (예: 10101)" id="${sid}_id" onblur="saveClasses()"></div>
-    <div><select id="${sid}_g" onchange="saveClasses()"><option value="남학생">남학생</option><option value="여학생">여학생</option></select></div>
-    <button class="btn btn-danger" style="font-size:11px;padding:4px 7px;" onclick="removeStudent('${sid}','${id2}')">삭제</button>`;
-  rows.appendChild(div);
+  rows.insertAdjacentHTML('beforeend',makeStudentRow(sid,id2,rn,'','남학생','B'));
 }
 
 function removeStudent(sid,cid){
@@ -816,7 +808,8 @@ function saveClasses(){
     document.querySelectorAll('#srows_'+cid+' .student-row').forEach(r=>{
       students.push({
         id:r.querySelector('[id$="_id"]')?.value.trim()||'',
-        gender:r.querySelector('[id$="_g"]')?.value||'남학생'
+        gender:r.querySelector('[id$="_g"]')?.value||'남학생',
+        grade:r.querySelector('[id$="_grade"]')?.value||'B'
       });
     });
     cls.push({cid,name:document.getElementById('cname_'+cid)?.value||'반',students});
@@ -839,26 +832,18 @@ function loadClasses(){
     const panel=document.createElement('div');
     panel.className='class-panel'; panel.id='cpanel_'+id;
     panel.innerHTML=`
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
         <input class="class-name-input" id="cname_${id}" value="${esc(c.name)}" onchange="updateClassName('${id}')">
-        <button class="btn btn-danger" style="font-size:11px;padding:4px 9px;" onclick="deleteClass('${id}')">반 삭제</button>
+        <button class="btn btn-danger" style="font-size:12px;padding:5px 10px;" onclick="deleteClass('${id}')">반 삭제</button>
       </div>
       <div class="student-list" id="srows_${id}"></div>
       <button class="add-student-btn" onclick="addStudent('${id}')">+ 학생 추가</button>`;
     panelsEl.appendChild(panel);
-    c.students.forEach(s=>{
+    c.students.forEach((s,i)=>{
       sCount++;
       const sid='s_'+sCount;
       const rows=document.getElementById('srows_'+id);
-      const rn=rows.children.length+1;
-      const div=document.createElement('div');
-      div.className='student-row'; div.id=sid;
-      div.innerHTML=`
-        <span class="s-num">${rn}</span>
-        <div><input type="text" placeholder="학번" id="${sid}_id" value="${esc(s.id)}" onblur="saveClasses()"></div>
-        <div><select id="${sid}_g" onchange="saveClasses()"><option value="남학생" ${s.gender==='남학생'?'selected':''}>남학생</option><option value="여학생" ${s.gender==='여학생'?'selected':''}>여학생</option></select></div>
-        <button class="btn btn-danger" style="font-size:11px;padding:4px 7px;" onclick="removeStudent('${sid}','${id}')">삭제</button>`;
-      rows.appendChild(div);
+      rows.insertAdjacentHTML('beforeend',makeStudentRow(sid,id,i+1,s.id,s.gender||'남학생',s.grade||'B'));
     });
   });
   document.querySelector('.class-tab-btn')?.click();
@@ -867,11 +852,12 @@ function loadClasses(){
 function getStudentsOfClass(cid){
   return Array.from(document.querySelectorAll('#srows_'+cid+' .student-row')).map(r=>({
     id:r.querySelector('[id$="_id"]')?.value.trim()||'',
-    gender:r.querySelector('[id$="_g"]')?.value||'남학생'
+    gender:r.querySelector('[id$="_g"]')?.value||'남학생',
+    grade:r.querySelector('[id$="_grade"]')?.value||'B'
   })).filter(s=>s.id);
 }
 
-// ── 학생 자동 생성 ──
+// ── 자동 생성 ──
 function autoGenStudents(){
   const classNum=parseInt(document.getElementById('autogen-classnum')?.value)||0;
   const count=parseInt(document.getElementById('autogen-count')?.value)||0;
@@ -884,30 +870,17 @@ function autoGenStudents(){
     const cid=p.id.replace('cpanel_','');
     if(document.getElementById('cname_'+cid)?.value===classNum+'반')targetId=cid;
   });
-  if(!targetId){
-    targetId=addClass(classNum+'반');
-  } else {
-    switchClass(targetId);
-    if(!confirm(`기존 "${classNum}반" 목록을 초기화하고 자동생성할까요?`))return;
-  }
+  if(!targetId){targetId=addClass(classNum+'반');}
+  else{switchClass(targetId);if(!confirm(`기존 "${classNum}반" 목록을 초기화하고 자동생성할까요?`))return;}
   const rows=document.getElementById('srows_'+targetId);
   if(rows)rows.innerHTML='';
   for(let i=1;i<=count;i++){
     const studentId=`${grade}${String(classNum).padStart(2,'0')}${String(i).padStart(2,'0')}`;
     sCount++;
     const sid='s_'+sCount;
-    const div=document.createElement('div');
-    div.className='student-row'; div.id=sid;
-    const rn=i;
-    div.innerHTML=`
-      <span class="s-num">${rn}</span>
-      <div><input type="text" placeholder="학번" id="${sid}_id" value="${studentId}" onblur="saveClasses()"></div>
-      <div><select id="${sid}_g" onchange="saveClasses()"><option value="남학생">남학생</option><option value="여학생">여학생</option></select></div>
-      <button class="btn btn-danger" style="font-size:11px;padding:4px 7px;" onclick="removeStudent('${sid}','${targetId}')">삭제</button>`;
-    rows.appendChild(div);
+    rows.insertAdjacentHTML('beforeend',makeStudentRow(sid,targetId,i,studentId,'남학생','B'));
   }
-  saveClasses();
-  refreshClassSelects();
+  saveClasses();refreshClassSelects();
   showToast(`${classNum}반 ${count}명 생성 완료!`);
 }
 
@@ -919,52 +892,34 @@ function pasteGenStudents(){
   if(!raw.trim())return showToast('번호+성별 내용을 입력해주세요!','err');
   const cfg=S.get('cfg',{grade:'1'});
   const grade=parseInt(cfg.grade)||1;
-  const lines=raw.trim().split('\n').map(l=>l.trim()).filter(Boolean);
-  const parsed=lines.map(l=>{
-    const parts=l.split(/\s+/);
+  const parsed=raw.trim().split('\n').map(l=>{
+    const parts=l.trim().split(/\s+/);
     const num=parseInt(parts[0]);
-    const gRaw=parts[1]||'남';
-    const gender=gRaw.includes('여')?'여학생':'남학생';
-    if(!num||isNaN(num))return null;
-    return{num,gender};
+    const gender=parts[1]?.includes('여')?'여학생':'남학생';
+    return num&&!isNaN(num)?{num,gender}:null;
   }).filter(Boolean);
   if(!parsed.length)return showToast('형식을 확인해주세요! (예: 1 남)','err');
-
   let targetId=null;
   document.querySelectorAll('.class-panel').forEach(p=>{
     const cid=p.id.replace('cpanel_','');
     if(document.getElementById('cname_'+cid)?.value===classNum+'반')targetId=cid;
   });
-  if(!targetId){
-    targetId=addClass(classNum+'반');
-  } else {
-    switchClass(targetId);
-    if(!confirm(`기존 "${classNum}반" 목록을 초기화하고 생성할까요?`))return;
-  }
+  if(!targetId){targetId=addClass(classNum+'반');}
+  else{switchClass(targetId);if(!confirm(`기존 "${classNum}반" 목록을 초기화하고 생성할까요?`))return;}
   const rows=document.getElementById('srows_'+targetId);
   if(rows)rows.innerHTML='';
   parsed.forEach((p,i)=>{
     const studentId=`${grade}${String(classNum).padStart(2,'0')}${String(p.num).padStart(2,'0')}`;
     sCount++;
     const sid='s_'+sCount;
-    const div=document.createElement('div');
-    div.className='student-row'; div.id=sid;
-    div.innerHTML=`
-      <span class="s-num">${i+1}</span>
-      <div><input type="text" placeholder="학번" id="${sid}_id" value="${studentId}" onblur="saveClasses()"></div>
-      <div><select id="${sid}_g" onchange="saveClasses()"><option value="${p.gender}" selected>${p.gender}</option><option value="${p.gender==='남학생'?'여학생':'남학생'}">${p.gender==='남학생'?'여학생':'남학생'}</option></select></div>
-      <button class="btn btn-danger" style="font-size:11px;padding:4px 7px;" onclick="removeStudent('${sid}','${targetId}')">삭제</button>`;
-    rows.appendChild(div);
+    rows.insertAdjacentHTML('beforeend',makeStudentRow(sid,targetId,i+1,studentId,p.gender,'B'));
   });
   document.getElementById('paste-students').value='';
-  saveClasses();
-  refreshClassSelects();
+  saveClasses();refreshClassSelects();
   showToast(`${parsed.length}명 생성 완료!`);
 }
 
-// ══════════════════════
-// 문구 형식 정리
-// ══════════════════════
+// ── 형식 정리 ──
 function formatPhrases(textareaId, countId, key, type){
   const ta=document.getElementById(textareaId);
   if(!ta)return;
@@ -978,9 +933,9 @@ function formatPhrases(textareaId, countId, key, type){
     if(!trimmed)return;
     const catOnly=/^\[([^\]]+)\]\s*$/.exec(trimmed);
     const catWith=/^\[([^\]]+)\]\s+(.+)$/.exec(trimmed);
-    if(catOnly){ currentCat=catOnly[1]; }
-    else if(catWith){ currentCat=catWith[1]; result.push(`[${currentCat}] ${catWith[2]}`); }
-    else if(currentCat&&trimmed){ result.push(`[${currentCat}] ${trimmed}`); }
+    if(catOnly){currentCat=catOnly[1];}
+    else if(catWith){currentCat=catWith[1];result.push(`[${currentCat}] ${catWith[2]}`);}
+    else if(currentCat&&trimmed){result.push(`[${currentCat}] ${trimmed}`);}
   });
   if(!result.length)return showToast('정리할 문구를 찾지 못했어요.','err');
   ta.value=result.join('\n');
@@ -990,22 +945,21 @@ function formatPhrases(textareaId, countId, key, type){
   showToast(`${result.length}개 문구 정리 완료!`);
 }
 
-// ── 문구 전체 삭제 ──
 function clearPhrases(textareaId, countId, key, type){
   const ta=document.getElementById(textareaId);
   if(!ta||!ta.value.trim())return showToast('삭제할 문구가 없어요!','err');
-  if(!confirm('문구 뱅크를 전체 삭제할까요? 되돌릴 수 없어요!'))return;
+  if(!confirm('문구 뱅크를 전체 삭제할까요?'))return;
   ta.value='';
   if(type==='se')saveSeData(key);
   else saveChData(key);
   updateCount(textareaId,countId);
-  showToast('문구 뱅크가 삭제됐어요!');
+  showToast('삭제됐어요!');
 }
 
-
+// ── CSV 내보내기 ──
 function exportExcel(tab){
   const cfg=loadSetting();
-  let results, type, subject, activity;
+  let results,type,subject,activity;
   if(tab==='se'){
     results=window._seResults||S.get('se-last-results',[]);
     type=document.getElementById('se-export-type')?.value||'se';
@@ -1035,9 +989,7 @@ function exportExcel(tab){
   showToast('다운로드 시작!');
 }
 
-// ══════════════════════
-// JSON 백업/복원
-// ══════════════════════
+// ── JSON 백업/복원 ──
 function exportJSON(){
   const data={};
   Object.keys(localStorage).filter(k=>k.startsWith('sgb_')).forEach(k=>{
@@ -1050,7 +1002,6 @@ function exportJSON(){
   a.click(); URL.revokeObjectURL(url);
   showToast('백업 파일 다운로드!');
 }
-
 function importJSON(e){
   const file=e.target.files[0];
   if(!file)return;
@@ -1062,17 +1013,14 @@ function importJSON(e){
       Object.keys(data).forEach(k=>localStorage.setItem('sgb_'+k,JSON.stringify(data[k])));
       showToast('불러오기 완료! 새로고침합니다.');
       setTimeout(()=>location.reload(),1000);
-    }catch{showToast('파일을 읽을 수 없어요. JSON 파일인지 확인해주세요.','err');}
+    }catch{showToast('파일을 읽을 수 없어요.','err');}
   };
   reader.readAsText(file);
   e.target.value='';
 }
 
-// ══════════════════════
-// 초기화
-// ══════════════════════
 function clearAll(){
-  if(!confirm('모든 데이터를 초기화할까요? 되돌릴 수 없어요!'))return;
+  if(!confirm('모든 데이터를 초기화할까요?'))return;
   Object.keys(localStorage).filter(k=>k.startsWith('sgb_')).forEach(k=>localStorage.removeItem(k));
   showToast('초기화됐어요!');
   setTimeout(()=>location.reload(),800);
@@ -1081,23 +1029,18 @@ function clearAll(){
 window.onload=()=>{
   loadSetting();
   loadClasses();
-
-  // 세특 마이그레이션 및 로드
   const subjects=S.get('se-subjects',[]);
   if(subjects.length){
     subjects.forEach(s=>{
       const d=S.get('se-data-'+s,{});
       if(d.activity!==undefined&&!d.activities){
         d.activities=d.activity?d.activity.split('\n').filter(l=>l.trim()).map(l=>({name:l.trim(),desc:''})):[];
-        delete d.activity;
-        S.set('se-data-'+s,d);
+        delete d.activity; S.set('se-data-'+s,d);
       }
     });
     activeSeSubject=subjects[0];
     renderSeSubjects();
   }
-
-  // 창체 마이그레이션 및 로드
   ['자율','진로','동아리'].forEach(type=>{
     const d=S.get('ch-data-'+type,{});
     if(typeof d.activities==='string'){
@@ -1106,12 +1049,9 @@ window.onload=()=>{
     }
   });
   renderChPanel('자율');
-
   refreshClassSelects();
-
-  // 이전 결과 복원
   const seRes=S.get('se-last-results',[]);
-  if(seRes.length){window._seResults=seRes;renderCombineResults(seRes,'se-combine-results');document.getElementById('se-export-box').style.display='block';}
+  if(seRes.length){window._seResults=seRes;renderCombineResults(seRes,'se-combine-results',true);document.getElementById('se-export-box').style.display='block';}
   const chRes=S.get('ch-last-results',[]);
-  if(chRes.length){window._chResults=chRes;renderCombineResults(chRes,'ch-combine-results');document.getElementById('ch-export-box').style.display='block';}
+  if(chRes.length){window._chResults=chRes;renderCombineResults(chRes,'ch-combine-results',false);document.getElementById('ch-export-box').style.display='block';}
 };
