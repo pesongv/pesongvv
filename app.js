@@ -418,33 +418,50 @@ function actPrefix(name,dateStr){
   return displayName+c+' ';
 }
 
-// ── 세특 등급 목록 렌더 ──
+// ── 세특 등급 목록 렌더 (활동별) ──
 function seLoadGradeList(){
   const cid=document.getElementById('se-result-class')?.value;
+  const subj=document.getElementById('se-result-subject')?.value;
   const container=document.getElementById('se-grade-list');
   if(!container)return;
   if(!cid){container.innerHTML='';return;}
   const students=getStudentsOfClass(cid);
   if(!students.length){container.innerHTML='<div style="font-size:13px;color:var(--text-3);">학생이 없어요.</div>';return;}
-  let html='<div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">학생별 등급 설정</div>';
-  html+='<div style="display:flex;flex-direction:column;gap:5px;max-height:220px;overflow-y:auto;">';
+
+  // 현재 과목의 활동 목록 가져오기
+  const phrases=subj?S.get('se-data-'+subj,{phrases:''}).phrases:'';
+  const gradeMap=getPhrasesByActivityGrade(phrases);
+  const actNames=Object.keys(gradeMap);
+
+  let html='<div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">학생별 활동별 등급 설정</div>';
+  html+='<div style="display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto;">';
   students.forEach(s=>{
-    html+=`<div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;">
-      <span style="font-size:13px;font-weight:600;">${esc(s.id)}</span>
-      <select id="se-grade-${esc(s.id)}" style="font-size:13px;font-weight:700;padding:4px 6px;width:70px;">
-        <option value="A">A</option>
-        <option value="B" selected>B</option>
-        <option value="C">C</option>
-        <option value="D">D</option>
-        <option value="미작성">미작성</option>
-      </select>
-    </div>`;
+    html+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--text);">${esc(s.id)} <span style="font-size:11px;color:var(--text-3);font-weight:400;">${esc(s.gender)}</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">`;
+    if(actNames.length){
+      actNames.forEach(act=>{
+        html+=`<div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:90px;">
+          <label style="font-size:10px;color:var(--text-3);font-weight:600;">${esc(act)}</label>
+          <select id="se-grade-${esc(s.id)}-${esc(act)}" style="font-size:12px;font-weight:700;padding:4px 6px;">
+            <option value="A">A</option>
+            <option value="B" selected>B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="미작성">미작성</option>
+          </select>
+        </div>`;
+      });
+    } else {
+      html+=`<span style="font-size:12px;color:var(--text-3);">과목을 먼저 선택하고 문구 뱅크를 등록해주세요.</span>`;
+    }
+    html+=`</div></div>`;
   });
   html+='</div>';
   container.innerHTML=html;
 }
 
-function seRenderCombine(){}
+function seRenderCombine(){seLoadGradeList();}
 
 function seCombine(){
   const cid=document.getElementById('se-result-class')?.value;
@@ -462,11 +479,19 @@ function seCombine(){
   actNames.forEach(act=>{usedMap[act]={A:[],B:[],C:[],D:[]};});
 
   const results=students.map(s=>{
-    const grade=document.getElementById('se-grade-'+s.id)?.value||'B';
-    if(grade==='미작성'){
-      return{studentId:s.id,gender:s.gender,grade,text:''};
-    }
+    // 활동별 등급 읽기
+    const actGrades={};
+    actNames.forEach(act=>{
+      actGrades[act]=document.getElementById(`se-grade-${s.id}-${act}`)?.value||'B';
+    });
+
+    // 모든 활동이 미작성이면 빈칸
+    const allSkipped=actNames.every(act=>actGrades[act]==='미작성');
+    if(allSkipped)return{studentId:s.id,gender:s.gender,grade:'미작성',text:''};
+
     const parts=actNames.map(act=>{
+      const grade=actGrades[act];
+      if(grade==='미작성')return '';
       const ps=gradeMap[act][grade]||gradeMap[act]['B']||[];
       if(!ps.length)return '';
       let avail=ps.map((_,i)=>i).filter(i=>!usedMap[act][grade].includes(i));
@@ -476,8 +501,9 @@ function seCombine(){
       usedMap[act][grade].push(idx);
       return actPrefix(act)+ps[idx];
     }).filter(Boolean);
+
     const raw=parts.join('\n');
-    return{studentId:s.id,gender:s.gender,grade,text:correctText(raw)};
+    return{studentId:s.id,gender:s.gender,grade:Object.values(actGrades).filter(g=>g!=='미작성').join('/'),text:correctText(raw)};
   });
 
   window._seResults=results;
