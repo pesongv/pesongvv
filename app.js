@@ -428,10 +428,15 @@ function seLoadGradeList(){
   const students=getStudentsOfClass(cid);
   if(!students.length){container.innerHTML='<div style="font-size:13px;color:var(--text-3);">학생이 없어요.</div>';return;}
 
-  // 현재 과목의 활동 목록 가져오기
-  const phrases=subj?S.get('se-data-'+subj,{phrases:''}).phrases:'';
-  const gradeMap=getPhrasesByActivityGrade(phrases);
-  const actNames=Object.keys(gradeMap);
+  // 활동 목록에서 활동명 가져오기 (문구 뱅크 없어도 됨)
+  const actNames=subj?getSeActivities(subj).map(a=>a.name).filter(Boolean):[];
+
+  // 문구 뱅크에서 추가 활동명도 포함
+  if(subj){
+    const phrases=S.get('se-data-'+subj,{phrases:''}).phrases;
+    const gradeMap=getPhrasesByActivityGrade(phrases);
+    Object.keys(gradeMap).forEach(n=>{if(!actNames.includes(n))actNames.push(n);});
+  }
 
   let html='<div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">학생별 활동별 등급 설정</div>';
   html+='<div style="display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto;">';
@@ -453,7 +458,7 @@ function seLoadGradeList(){
         </div>`;
       });
     } else {
-      html+=`<span style="font-size:12px;color:var(--text-3);">과목을 먼저 선택하고 문구 뱅크를 등록해주세요.</span>`;
+      html+=`<span style="font-size:12px;color:var(--text-3);">활동을 먼저 등록해주세요.</span>`;
     }
     html+=`</div></div>`;
   });
