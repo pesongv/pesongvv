@@ -512,7 +512,7 @@ function seCombine(){
       return actPrefix(act)+ps[idx];
     }).filter(Boolean);
 
-    const raw=parts.join('\n');
+    const raw=parts.join(' ');
     return{studentId:s.id,gender:s.gender,grade:Object.values(actGrades).filter(g=>g!=='미작성').join('/'),text:correctText(raw)};
   });
 
