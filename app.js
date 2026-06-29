@@ -1038,7 +1038,7 @@ function formatPhrases(textareaId, countId, key, type){
   const result=[];
   let currentCat=null;
   lines.forEach(line=>{
-    const trimmed=line.trim().replace(/[▶▷►→•·※]/g,'').trim();
+    const trimmed=line.trim().replace(/[▶▷►→•·※■□●○◆◇★☆]/g,'').trim();
     if(!trimmed)return;
     const catOnly=/^\[([^\]]+)\]\s*$/.exec(trimmed);
     const catWith=/^\[([^\]]+)\]\s+(.+)$/.exec(trimmed);
