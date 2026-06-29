@@ -110,9 +110,14 @@ function refreshClassSelects(){
     if(!sel)return;
     const prev=sel.value;
     sel.innerHTML='<option value="">반 선택</option>';
-    document.querySelectorAll('.class-panel').forEach(p=>{
-      const cid=p.id.replace('cpanel_','');
-      const name=document.getElementById('cname_'+cid)?.value||'반';
+    const seen=new Set();
+    const tabs=Array.from(document.querySelectorAll('.class-tab-btn'));
+    tabs.sort((a,b)=>(parseInt(a.textContent)||999)-(parseInt(b.textContent)||999));
+    tabs.forEach(btn=>{
+      const cid=btn.id.replace('ctab_','');
+      if(seen.has(cid))return;
+      seen.add(cid);
+      const name=document.getElementById('cname_'+cid)?.value||btn.textContent||'반';
       const opt=document.createElement('option');
       opt.value=cid; opt.textContent=name;
       if(cid===prev)opt.selected=true;
@@ -829,6 +834,7 @@ function addClass(name){
     <button class="add-student-btn" onclick="addStudent('${id}')">+ 학생 추가</button>`;
   panelsEl.appendChild(panel);
   switchClass(id);
+  sortClassTabs();
   saveClasses();
   refreshClassSelects();
   return id;
@@ -900,10 +906,21 @@ function saveClasses(){
 function loadClasses(){
   const cls=S.get('classes',[]);
   if(!cls.length){addClass('1반');return;}
-  cls.forEach(c=>{
+
+  // 반 이름 기준 번호순 정렬
+  const sorted=[...cls].sort((a,b)=>{
+    const na=parseInt(a.name)||999;
+    const nb=parseInt(b.name)||999;
+    return na-nb;
+  });
+
+  sorted.forEach(c=>{
     classCount++;
+    // 고유 id 보장 — 저장된 cid 재사용
     const id=c.cid||'cls_'+classCount;
     const tabBar=document.getElementById('classTabBar');
+    // 중복 방지
+    if(document.getElementById('ctab_'+id))return;
     const btn=document.createElement('button');
     btn.className='class-tab-btn'; btn.id='ctab_'+id;
     btn.textContent=c.name; btn.onclick=()=>switchClass(id);
@@ -927,6 +944,19 @@ function loadClasses(){
     });
   });
   document.querySelector('.class-tab-btn')?.click();
+}
+
+// 반 추가 후 번호순 정렬
+function sortClassTabs(){
+  const tabBar=document.getElementById('classTabBar');
+  const panelsEl=document.getElementById('classPanels');
+  const tabs=Array.from(tabBar.querySelectorAll('.class-tab-btn'));
+  tabs.sort((a,b)=>{
+    const na=parseInt(a.textContent)||999;
+    const nb=parseInt(b.textContent)||999;
+    return na-nb;
+  });
+  tabs.forEach(t=>tabBar.appendChild(t));
 }
 
 function getStudentsOfClass(cid){
