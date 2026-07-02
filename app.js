@@ -1,11 +1,11 @@
 // ── 탭 ──
-const TAB_IDS=['t-se','t-ch','t-student','t-setting'];
+const TAB_IDS=['t-se','t-ch','t-sports','t-student','t-setting'];
 function showTab(id){
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   document.querySelectorAll('.nav-tab')[TAB_IDS.indexOf(id)]?.classList.add('active');
-  if(id==='t-se'||id==='t-ch') refreshClassSelects();
+  if(id==='t-se'||id==='t-ch'||id==='t-sports') refreshClassSelects();
 }
 
 // ── 스토리지 ──
@@ -105,7 +105,7 @@ function actDateVal2(a){return actDateVal(a);}
 
 // ── 반 선택 드롭다운 새로고침 ──
 function refreshClassSelects(){
-  ['se-result-class','ch-result-class'].forEach(id=>{
+  ['se-result-class','ch-result-class','sports-result-class'].forEach(id=>{
     const sel=document.getElementById(id);
     if(!sel)return;
     const prev=sel.value;
@@ -525,6 +525,195 @@ function seCombine(){
 }
 
 // ══════════════════════
+// 스포츠 (종목 — 성취기준 없이 기초 기능 세특, 등급 구분 없이 30문장)
+// ══════════════════════
+let activeSportsItem=null;
+
+function addSportsItem(){
+  const input=document.getElementById('sports-input');
+  const name=input.value.trim();
+  if(!name)return showToast('종목명을 입력해주세요!','err');
+  const list=S.get('sports-list',[]);
+  if(list.includes(name))return showToast('이미 있는 종목이에요!','err');
+  list.push(name);
+  S.set('sports-list',list);
+  input.value='';
+  renderSportsList();
+  switchSportsItem(name);
+  refreshClassSelects();
+}
+
+function renderSportsList(){
+  const list=S.get('sports-list',[]);
+  const tabsEl=document.getElementById('sportsSubTabs');
+  const panelsEl=document.getElementById('sportsSubPanels');
+  if(!tabsEl||!panelsEl)return;
+  tabsEl.innerHTML=''; panelsEl.innerHTML='';
+  if(!list.length){
+    tabsEl.innerHTML='<span style="font-size:13px;color:var(--text-3);">종목을 추가해주세요.</span>';
+    return;
+  }
+  list.forEach(sp=>{
+    const btn=document.createElement('button');
+    btn.className='sub-tab'+(sp===activeSportsItem?' active':'');
+    btn.textContent=sp; btn.onclick=()=>switchSportsItem(sp);
+    tabsEl.appendChild(btn);
+    const data=S.get('sports-data-'+sp,{phrases:''});
+    const panel=document.createElement('div');
+    panel.className='sub-panel'+(sp===activeSportsItem?' active':'');
+    panel.id='sports-panel-'+sp;
+    panel.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <span style="font-size:15px;font-weight:700;color:var(--text);">${esc(sp)}</span>
+        <button class="btn btn-danger" style="font-size:12px;padding:5px 10px;" onclick="deleteSportsItem('${esc(sp)}')">삭제</button>
+      </div>
+      <div class="ai-box">
+        <div class="ai-box-title">🤖 AI용 텍스트</div>
+        <div class="ai-preview" id="sports-preview-${sp}">미리보기 버튼을 눌러주세요.</div>
+        <div class="btn-row">
+          <button class="btn" style="font-size:12px;" onclick="updateSportsPreview('${sp}')">미리보기</button>
+          <button class="btn btn-dark" style="font-size:12px;" onclick="copySportsAiText('${sp}')">📋 AI용 텍스트 복사</button>
+        </div>
+        <div style="font-size:12px;color:var(--text-3);margin-top:8px;">💡 복사 후 AI 채팅창에 붙여넣으면 기초 기능 문구 30개를 받을 수 있어요!</div>
+      </div>
+      <div class="divider"></div>
+      <div class="phrase-bank">
+        <div class="phrase-bank-hd">
+          <span class="phrase-bank-title">📝 문구 뱅크</span>
+          <div style="display:flex;gap:5px;align-items:center;">
+            <span class="phrase-badge" id="sports-count-${sp}">0개</span>
+            <button class="btn btn-danger" style="font-size:11px;padding:2px 8px;" onclick="clearPhrases('sports-phrases-${sp}','sports-count-${sp}','${sp}','sports')">전체 삭제</button>
+          </div>
+        </div>
+        <div class="phrase-hint">형식: <code>[종목명] 문장</code> 으로 한 줄씩, 등급 구분 없이<br>예) <code>[배드민턴]</code> 정확한 그립과 안정된 스탠스로 셔틀콕을 컨트롤하는 모습을 보임.</div>
+        <div class="format-row">
+          <button class="btn" style="font-size:12px;" onclick="formatPhrases('sports-phrases-${sp}','sports-count-${sp}','${sp}','sports')">✨ 형식 정리</button>
+          <span style="font-size:12px;color:var(--text-3);">AI 문구를 붙여넣고 클릭하세요</span>
+        </div>
+        <textarea id="sports-phrases-${sp}" placeholder="AI에게 받은 문구를 여기에 붙여넣으세요..." oninput="saveSportsData('${sp}')" style="min-height:160px;">${esc(data.phrases)}</textarea>
+      </div>`;
+    panelsEl.appendChild(panel);
+    updateCount('sports-phrases-'+sp,'sports-count-'+sp);
+  });
+}
+
+function switchSportsItem(sp){
+  activeSportsItem=sp;
+  document.querySelectorAll('#sportsSubTabs .sub-tab').forEach(b=>b.classList.toggle('active',b.textContent===sp));
+  document.querySelectorAll('#sportsSubPanels .sub-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('sports-panel-'+sp)?.classList.add('active');
+}
+
+function saveSportsData(sp){
+  S.set('sports-data-'+sp,{phrases:document.getElementById('sports-phrases-'+sp)?.value||''});
+  updateCount('sports-phrases-'+sp,'sports-count-'+sp);
+}
+
+function deleteSportsItem(sp){
+  if(!confirm(`"${sp}" 종목을 삭제할까요?`))return;
+  const list=S.get('sports-list',[]).filter(x=>x!==sp);
+  S.set('sports-list',list);
+  S.del('sports-data-'+sp);
+  activeSportsItem=list[0]||null;
+  renderSportsList();
+  refreshClassSelects();
+}
+
+function updateSportsPreview(sp){
+  document.getElementById('sports-preview-'+sp).textContent=`[스포츠 기초 기능 세특 문구 생성 요청]
+종목: ${sp}
+
+별도의 성취기준이나 활동 설명은 없습니다. "${sp}" 종목의 일반적인 기초 기능(그립/자세, 스텝, 기본 기술, 규칙 이해 등 해당 종목의 실제 기초 기능과 용어)을 기준으로, 중학교 생활기록부 세특 문구를 작성해주세요.
+
+원칙:
+- 관찰자 시점 / 주어 없이 / 긍정적 표현
+- 단순히 ~보임.으로 끝내지 말고 ~고, ~며, ~다 등 연결어미를 활용해 풍부하게 작성
+- 구체적인 행동과 교육적 성취를 2~3문장으로 표현
+- 추상적인 표현 절대 금지, 반드시 관찰 가능한 구체적 행동으로 서술
+- "${sp}"의 실제 기초 기능·용어(예: 그립, 스텝, 자세, 타법, 패스, 드리블, 슈팅, 리시브 등 종목에 맞는 용어)를 다양하게 활용
+- 등급 구분 없이 하나의 수준(고르게 우수한 수행)으로 작성
+
+지양 표현 (절대 사용 금지):
+~라고 느낌, ~이해함, ~생각함, ~생각해 봄, ~다짐함, ~배움, ~알게 됨, ~나타냄, ~드러냄,
+~노력함, ~노력하고 있음, ~하려고 함, ~하고자 함, ~할 수 있음, ~인 것 같음
+
+절대 사용 금지 단어 (생활기록부 기재 불가 항목):
+수행평가, 평가, 시험, 모의고사, 전국연합평가, 인증시험
+대회, 수상, 자격증, 논문, 소논문
+해외활동, 해외봉사, 도서출간, 특허, 장학생, 장학금
+부모, 친인척, 가족
+네이버, EBS, Zoom, 구글, 유튜브, 페이스북, 인스타그램, 에버랜드, 레고, 패들렛, 띵커벨, 트위터, 커리어넷, 미리캔버스, KTX
+학교명, 재단명, 기관명, 단체명, 조직명
+
+대체 표현 (반드시 아래 표현을 적극 활용):
+~활동지를 작성함, ~발표함, ~기록함, ~표현함, ~하는 모습을 보임,
+~능력이 뛰어남, ~대해 토의함, ~비교함, ~대안을 제시함,
+~두각을 보임, ~한 모습이 인상적임, ~한 모습이 돋보임,
+~심도 있게 탐색함, ~포부를 밝힘, ~하여 학생들에게 좋은 반응을 얻음,
+~활동 중, ~기능 연습 중, ~과정에서, ~활동을 통해, ~연습 과정에서, ~기술 습득 과정에서
+
+반드시 아래 형식으로 작성해주세요.
+⚠️ 종목명은 위에 입력된 그대로 사용하세요. 띄어쓰기, 맞춤법, 글자 하나도 절대 바꾸지 마세요.
+⚠️ 문구 안에 종목명을 자연스럽게 포함하여 작성하세요. 문구만 단독으로 쓰지 말고 종목명이 문장 안에 녹아들도록 작성해주세요.
+⚠️ 등급 구분(A/B/C/D) 없이 총 30개를 작성해주세요. 30개 모두 서로 다른 문장으로, 표현과 어휘가 겹치지 않게 다양하게 작성해주세요.
+형식: [종목명] 문장
+예시) 종목이 "배드민턴" 이라면:
+[배드민턴] 배드민턴 활동에서 정확한 그립과 안정된 스탠스를 바탕으로 셔틀콕을 정교하게 컨트롤하는 모습을 보임.
+[배드민턴] 배드민턴 활동에서 풋워크를 활용해 빠르게 위치를 이동하며 안정적으로 스트로크를 구사하는 모습을 보임.
+
+추가 질문 없이 바로 작성해주세요.
+작성된 문구 전체를 코드블록 없이 깔끔하게 출력해주세요.`;
+}
+
+function copySportsAiText(sp){
+  updateSportsPreview(sp);
+  navigator.clipboard.writeText(document.getElementById('sports-preview-'+sp).textContent)
+    .then(()=>showToast('복사됐어요! AI에 붙여넣으세요 😊'));
+}
+
+// ── 스포츠 조합 ──
+function sportsCombine(){
+  const cid=document.getElementById('sports-result-class')?.value;
+  if(!cid)return showToast('반을 선택해주세요!','err');
+  const list=S.get('sports-list',[]);
+  if(!list.length)return showToast('종목을 먼저 추가해주세요!','err');
+
+  const map={};
+  list.forEach(sp=>{
+    const phrases=S.get('sports-data-'+sp,{phrases:''}).phrases;
+    const parsed=getPhrasesByActivity(phrases);
+    map[sp]=parsed[sp]||[];
+  });
+  const activeSports=list.filter(sp=>map[sp].length);
+  if(!activeSports.length)return showToast('문구 뱅크에 문구를 먼저 등록해주세요! [종목명] 문장 형식으로 등록해주세요.','err');
+  const students=getStudentsOfClass(cid);
+  if(!students.length)return showToast('학생을 먼저 등록해주세요!','err');
+
+  const usedMap={};
+  activeSports.forEach(sp=>{usedMap[sp]=[];});
+
+  const results=students.map(s=>{
+    const parts=activeSports.map(sp=>{
+      const ps=map[sp];
+      let avail=ps.map((_,i)=>i).filter(i=>!usedMap[sp].includes(i));
+      if(avail.length<1){usedMap[sp]=[];avail=ps.map((_,i)=>i);}
+      const shuffled=[...avail].sort(()=>Math.random()-0.5);
+      const idx=shuffled[0];
+      usedMap[sp].push(idx);
+      return ps[idx];
+    }).filter(Boolean);
+    const raw=parts.join(' ');
+    return{studentId:s.id,gender:s.gender,text:correctText(raw)};
+  });
+
+  window._sportsResults=results;
+  S.set('sports-last-results',results);
+  renderCombineResults(results,'sports-combine-results',false);
+  document.getElementById('sports-export-box').style.display='block';
+  showToast('조합 완료!');
+}
+
+// ══════════════════════
 // 창체
 // ══════════════════════
 let activeChTab='자율';
@@ -795,9 +984,9 @@ function toggleEdit(rid,containerId,studentId){
   if(isEditing){
     el.contentEditable='false';
     const newText=el.innerText;
-    const arr=containerId.startsWith('se')?window._seResults:window._chResults;
+    const arr=containerId.startsWith('se')?window._seResults:containerId.startsWith('sports')?window._sportsResults:window._chResults;
     const r=arr?.find(x=>x.studentId===studentId);
-    if(r){r.text=newText;S.set(containerId.startsWith('se')?'se-last-results':'ch-last-results',arr);}
+    if(r){r.text=newText;S.set(containerId.startsWith('se')?'se-last-results':containerId.startsWith('sports')?'sports-last-results':'ch-last-results',arr);}
     const card=el.closest('.result-card');
     const chip=card?.querySelector('.byte-chip');
     if(chip){const b=calcBytes(newText);chip.textContent=b.toLocaleString()+' B';chip.className='byte-chip '+(b>2000?'byte-over':b>1500?'byte-warn':'byte-ok');}
@@ -1050,6 +1239,7 @@ function formatPhrases(textareaId, countId, key, type){
   if(!result.length)return showToast('정리할 문구를 찾지 못했어요.','err');
   ta.value=result.join('\n');
   if(type==='se')saveSeData(key);
+  else if(type==='sports')saveSportsData(key);
   else saveChData(key);
   updateCount(textareaId,countId);
   showToast(`${result.length}개 문구 정리 완료!`);
@@ -1061,6 +1251,7 @@ function clearPhrases(textareaId, countId, key, type){
   if(!confirm('문구 뱅크를 전체 삭제할까요?'))return;
   ta.value='';
   if(type==='se')saveSeData(key);
+  else if(type==='sports')saveSportsData(key);
   else saveChData(key);
   updateCount(textareaId,countId);
   showToast('삭제됐어요!');
@@ -1074,6 +1265,11 @@ function exportExcel(tab){
     results=window._seResults||S.get('se-last-results',[]);
     type=document.getElementById('se-export-type')?.value||'se';
     subject=document.getElementById('se-export-subject')?.value.trim()||'';
+  } else if(tab==='sports'){
+    results=window._sportsResults||S.get('sports-last-results',[]);
+    type=document.getElementById('sports-export-type')?.value||'se';
+    subject=document.getElementById('sports-export-subject')?.value.trim()||'체육';
+    activity=subject;
   } else {
     results=window._chResults||S.get('ch-last-results',[]);
     type=document.getElementById('ch-export-type')?.value||'simple';
@@ -1190,7 +1386,7 @@ function prevSlide(id){
 // ESC 키로 닫기
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
-    ['se','ch','student'].forEach(id=>closeGuide(id));
+    ['se','ch','sports','student'].forEach(id=>closeGuide(id));
   }
 });
 
@@ -1218,9 +1414,16 @@ window.onload=()=>{
     }
   });
   renderChPanel('자율');
+  const sportsList=S.get('sports-list',[]);
+  if(sportsList.length){
+    activeSportsItem=sportsList[0];
+    renderSportsList();
+  }
   refreshClassSelects();
   const seRes=S.get('se-last-results',[]);
   if(seRes.length){window._seResults=seRes;renderCombineResults(seRes,'se-combine-results',true);document.getElementById('se-export-box').style.display='block';}
   const chRes=S.get('ch-last-results',[]);
   if(chRes.length){window._chResults=chRes;renderCombineResults(chRes,'ch-combine-results',false);document.getElementById('ch-export-box').style.display='block';}
+  const sportsRes=S.get('sports-last-results',[]);
+  if(sportsRes.length){window._sportsResults=sportsRes;renderCombineResults(sportsRes,'sports-combine-results',false);document.getElementById('sports-export-box').style.display='block';}
 };
