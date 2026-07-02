@@ -658,6 +658,7 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
 <nav class="nav">
   <button class="nav-tab active" onclick="showTab('t-se')">📚 세특</button>
   <button class="nav-tab" onclick="showTab('t-ch')">🏆 창체</button>
+  <button class="nav-tab" onclick="showTab('t-sports')">🏃 스포츠</button>
   <button class="nav-tab" onclick="showTab('t-student')">👥 학생관리</button>
   <button class="nav-tab" onclick="showTab('t-setting')">⚙️ 설정</button>
 </nav>
@@ -783,6 +784,71 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
                 <div><label>활동명</label><input type="text" id="ch-export-activity" placeholder="예: 자율활동"></div>
               </div>
               <button class="btn btn-green btn-full" onclick="exportExcel('ch')">📥 CSV 다운로드</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ 스포츠 ══ -->
+<div class="tab-content" id="t-sports">
+  <button class="guide-btn" onclick="openGuide('sports')">📖 스포츠 사용 설명서</button>
+  <div class="split-layout">
+
+    <!-- 왼쪽: 입력 -->
+    <div class="split-left">
+      <div class="card">
+        <div class="card-title"><div class="card-icon icon-dark">🏃</div>종목 추가</div>
+        <div style="display:flex;gap:8px;align-items:flex-end;">
+          <div style="flex:1;">
+            <label>종목명</label>
+            <input type="text" id="sports-input" placeholder="예: 배드민턴, 농구, 축구" onkeydown="if(event.key==='Enter')addSportsItem()">
+          </div>
+          <button class="btn btn-dark" onclick="addSportsItem()">+ 추가</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:8px;">💡 성취기준 없이 종목명만 추가하면 AI가 해당 종목의 기초 기능을 바탕으로 문구를 만들어줘요.</div>
+      </div>
+
+      <div class="card">
+        <div class="sub-tabs" id="sportsSubTabs">
+          <span style="font-size:12px;color:var(--text-3);">종목을 추가해주세요.</span>
+        </div>
+        <div id="sportsSubPanels"></div>
+      </div>
+    </div>
+
+    <!-- 오른쪽: 조합 결과 -->
+    <div class="split-right">
+      <div class="split-right-sticky">
+        <div class="card">
+          <div class="result-header-bar">
+            <div class="result-title">✨ 문구 조합 결과</div>
+          </div>
+          <div class="result-class-sel">
+            <div style="flex:1;">
+              <label>반 선택</label>
+              <select id="sports-result-class"></select>
+            </div>
+          </div>
+          <button class="btn btn-dark btn-full" onclick="sportsCombine()" style="margin-bottom:12px;">✨ 조합하기</button>
+          <div id="sports-combine-results"><div class="empty"><div class="empty-icon">📝</div>반을 선택 후<br>조합하기를 눌러주세요.</div></div>
+          <div id="sports-export-box" style="display:none;margin-top:12px;">
+            <div class="export-box">
+              <div class="export-title">📥 나이스 CSV 내보내기</div>
+              <div class="grid-2" style="margin-bottom:10px;">
+                <div><label>양식</label>
+                  <select id="sports-export-type">
+                    <option value="se">과목 세특 양식</option>
+                    <option value="jinro">진로특기사항 양식</option>
+                    <option value="simple">자율/동아리 (자체)</option>
+                  </select>
+                </div>
+                <div><label>과목명</label><input type="text" id="sports-export-subject" placeholder="예: 체육" value="체육"></div>
+              </div>
+              <button class="btn btn-green btn-full" onclick="exportExcel('sports')">📥 CSV 다운로드</button>
             </div>
           </div>
         </div>
@@ -975,6 +1041,53 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
       <div class="modal-nav">
         <button class="btn" onclick="prevSlide('ch')">← 이전</button>
         <button class="btn btn-dark" onclick="nextSlide('ch')">다음 →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 스포츠 가이드 -->
+<div class="modal-overlay" id="guide-sports">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-header-title">🏃 스포츠 탭 사용 설명서</span>
+      <button class="modal-close" onclick="closeGuide('sports')">✕</button>
+    </div>
+    <div class="modal-slides" id="slides-sports">
+      <div class="modal-slide active">
+        <div class="slide-step">STEP 01 / 04</div>
+        <span class="slide-icon">➕</span>
+        <div class="slide-title">종목 추가하기</div>
+        <div class="slide-desc">왼쪽 상단 <b>종목명 입력란</b>에 종목명을 입력하고 <b>+ 추가</b> 버튼을 클릭하세요.<br>예) 배드민턴, 농구, 축구, 배구, 티볼<br>성취기준이나 활동 설명 없이 종목명만 있으면 돼요.</div>
+        <div class="slide-tip">💡 종목은 여러 개 추가할 수 있어요. 탭으로 전환하며 관리해요!</div>
+      </div>
+      <div class="modal-slide">
+        <div class="slide-step">STEP 02 / 04</div>
+        <span class="slide-icon">🤖</span>
+        <div class="slide-title">AI 문구 받기</div>
+        <div class="slide-desc"><b>📋 AI용 텍스트 복사</b> 버튼을 클릭한 뒤,<br>ChatGPT나 Claude 같은 AI 채팅창에 붙여넣으세요.<br>AI가 해당 종목의 <b>기초 기능(그립·자세·스텝·기술 등)</b>을 바탕으로<br>등급 구분 없이 문구를 <b>30개</b> 만들어줘요.</div>
+        <div class="slide-tip">💡 종목마다 30문장씩 생성돼요. 종목이 여러 개면 하나씩 나눠 받아도 좋아요!</div>
+      </div>
+      <div class="modal-slide">
+        <div class="slide-step">STEP 03 / 04</div>
+        <span class="slide-icon">📝</span>
+        <div class="slide-title">문구 뱅크에 저장하기</div>
+        <div class="slide-desc">AI가 만들어준 문구를 <b>문구 뱅크</b> 텍스트창에 붙여넣고<br><b>✨ 형식 정리</b> 버튼을 클릭하세요.<br>자동으로 [종목명] 문장 형식으로 정리돼요.</div>
+        <div class="slide-tip">💡 지양 표현·금지 단어·대체 표현 기준은 세특·창체 탭과 동일해요!</div>
+      </div>
+      <div class="modal-slide">
+        <div class="slide-step">STEP 04 / 04</div>
+        <span class="slide-icon">✨</span>
+        <div class="slide-title">학생별 조합하기</div>
+        <div class="slide-desc">오른쪽 패널에서 <b>반을 선택</b>한 뒤<br><b>✨ 조합하기</b> 버튼을 클릭하면<br>등록된 모든 종목의 문구가 학생별로 자동 조합돼요.</div>
+        <div class="slide-tip">💡 결과는 수정·복사·CSV 내보내기가 모두 가능해요!</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div class="slide-dots" id="dots-sports"></div>
+      <div class="modal-nav">
+        <button class="btn" onclick="prevSlide('sports')">← 이전</button>
+        <button class="btn btn-dark" onclick="nextSlide('sports')">다음 →</button>
       </div>
     </div>
   </div>
