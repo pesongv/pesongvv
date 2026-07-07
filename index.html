@@ -658,8 +658,8 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
 <nav class="nav">
   <button class="nav-tab active" onclick="showTab('t-se')">📚 세특</button>
   <button class="nav-tab" onclick="showTab('t-ch')">🏆 창체</button>
-  <button class="nav-tab" onclick="showTab('t-sports')">🏃 스포츠</button>
   <button class="nav-tab" onclick="showTab('t-student')">👥 학생관리</button>
+  <button class="nav-tab" onclick="showTab('t-letter')">✉️ 가정통신문</button>
   <button class="nav-tab" onclick="showTab('t-setting')">⚙️ 설정</button>
 </nav>
 
@@ -793,71 +793,6 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
   </div>
 </div>
 
-<!-- ══ 스포츠 ══ -->
-<div class="tab-content" id="t-sports">
-  <button class="guide-btn" onclick="openGuide('sports')">📖 스포츠 사용 설명서</button>
-  <div class="split-layout">
-
-    <!-- 왼쪽: 입력 -->
-    <div class="split-left">
-      <div class="card">
-        <div class="card-title"><div class="card-icon icon-dark">🏃</div>종목 추가</div>
-        <div style="display:flex;gap:8px;align-items:flex-end;">
-          <div style="flex:1;">
-            <label>종목명</label>
-            <input type="text" id="sports-input" placeholder="예: 배드민턴, 농구, 축구" onkeydown="if(event.key==='Enter')addSportsItem()">
-          </div>
-          <button class="btn btn-dark" onclick="addSportsItem()">+ 추가</button>
-        </div>
-        <div style="font-size:11px;color:var(--text-3);margin-top:8px;">💡 성취기준 없이 종목명만 추가하면 AI가 해당 종목의 기초 기능을 바탕으로 문구를 만들어줘요.</div>
-      </div>
-
-      <div class="card">
-        <div class="sub-tabs" id="sportsSubTabs">
-          <span style="font-size:12px;color:var(--text-3);">종목을 추가해주세요.</span>
-        </div>
-        <div id="sportsSubPanels"></div>
-      </div>
-    </div>
-
-    <!-- 오른쪽: 조합 결과 -->
-    <div class="split-right">
-      <div class="split-right-sticky">
-        <div class="card">
-          <div class="result-header-bar">
-            <div class="result-title">✨ 문구 조합 결과</div>
-          </div>
-          <div class="result-class-sel">
-            <div style="flex:1;">
-              <label>반 선택</label>
-              <select id="sports-result-class"></select>
-            </div>
-          </div>
-          <button class="btn btn-dark btn-full" onclick="sportsCombine()" style="margin-bottom:12px;">✨ 조합하기</button>
-          <div id="sports-combine-results"><div class="empty"><div class="empty-icon">📝</div>반을 선택 후<br>조합하기를 눌러주세요.</div></div>
-          <div id="sports-export-box" style="display:none;margin-top:12px;">
-            <div class="export-box">
-              <div class="export-title">📥 나이스 CSV 내보내기</div>
-              <div class="grid-2" style="margin-bottom:10px;">
-                <div><label>양식</label>
-                  <select id="sports-export-type">
-                    <option value="se">과목 세특 양식</option>
-                    <option value="jinro">진로특기사항 양식</option>
-                    <option value="simple">자율/동아리 (자체)</option>
-                  </select>
-                </div>
-                <div><label>과목명</label><input type="text" id="sports-export-subject" placeholder="예: 체육" value="체육"></div>
-              </div>
-              <button class="btn btn-green btn-full" onclick="exportExcel('sports')">📥 CSV 다운로드</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
 <!-- ══ 학생관리 ══ -->
 <div class="tab-content" id="t-student">
   <button class="guide-btn" onclick="openGuide('student')">📖 학생관리 사용 설명서</button>
@@ -901,6 +836,143 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
 </div>
 
 <!-- ══ 설정 ══ -->
+<!-- ══ 가정통신문 ══ -->
+<div class="tab-content" id="t-letter">
+  <button class="guide-btn" onclick="openGuide('letter')">📖 가정통신문 사용 설명서</button>
+  <div class="split-layout">
+
+    <!-- 왼쪽 -->
+    <div class="split-left">
+      <div class="card">
+        <div class="card-title"><div class="card-icon icon-dark">✉️</div>CSV 업로드</div>
+
+        <!-- 설문 문항 안내 -->
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-xs);margin-bottom:14px;overflow:hidden;">
+          <button onclick="toggleLetterGuide()" style="width:100%;padding:10px 14px;background:none;border:none;cursor:pointer;font-family:inherit;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:13px;font-weight:600;color:var(--text);">📋 설문 문항 안내</span>
+            <span id="letter-guide-arrow" style="font-size:14px;color:var(--text-3);">›</span>
+          </button>
+          <div id="letter-guide-content" style="display:none;padding:0 14px 12px;">
+            <ol style="font-size:13px;color:var(--text-2);line-height:2;padding-left:18px;">
+              <li>요즘 학교생활 중 가장 즐겁거나 보람 있는 것은 무엇인가요?</li>
+              <li>친구들과의 관계는 어떤가요? 편하게 이야기해주세요.</li>
+              <li>요즘 학교생활이나 일상에서 어렵거나 힘든 점이 있나요?</li>
+              <li>현재 자신의 학습 태도나 성취에 대해 스스로 어떻게 생각하나요?</li>
+              <li>올해 이루고 싶은 목표나 꿈이 있다면 무엇인가요?</li>
+              <li>요즘 가장 관심 있거나 즐기는 취미나 활동이 있나요?</li>
+              <li>선생님께 전하고 싶은 말이나 도움받고 싶은 것이 있다면 적어주세요.</li>
+            </ol>
+            <div style="font-size:11px;color:var(--text-3);margin-top:6px;">💡 구글 설문지 열 순서: 타임스탬프 → 학번+이름 → 1번~7번 문항</div>
+          </div>
+        </div>
+
+        <!-- 업로드 -->
+        <div style="border:1.5px dashed var(--border-strong);border-radius:var(--radius-sm);padding:20px;text-align:center;margin-bottom:14px;cursor:pointer;" onclick="document.getElementById('letter-csv').click()">
+          <div style="font-size:28px;margin-bottom:8px;">📂</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;">CSV 파일 업로드</div>
+          <div style="font-size:12px;color:var(--text-3);">구글 스프레드시트 → 파일 → CSV 다운로드 후 업로드</div>
+          <input type="file" id="letter-csv" accept=".csv" style="display:none;" onchange="letterLoadCSV(event)">
+        </div>
+
+        <!-- 학생 목록 -->
+        <div id="letter-student-list"><div class="empty"><div class="empty-icon">📋</div>CSV 파일을 업로드하면<br>학생 목록이 나타나요.</div></div>
+      </div>
+    </div>
+
+    <!-- 오른쪽 -->
+    <div class="split-right">
+      <div class="split-right-sticky">
+        <div class="card">
+          <div class="result-header-bar">
+            <div class="result-title">✉️ 가정통신문 결과</div>
+          </div>
+
+          <!-- 10명씩 복사 버튼 -->
+          <div id="letter-batch-btns" style="display:none;margin-bottom:12px;">
+            <label style="margin-bottom:6px;display:block;">AI용 텍스트 묶음 복사</label>
+            <div class="btn-row" id="letter-batch-row"></div>
+            <div style="font-size:11px;color:var(--text-3);margin-top:6px;">💡 10명씩 나눠서 AI에 요청하면 안 잘려요!</div>
+          </div>
+
+          <div id="letter-results"><div class="empty"><div class="empty-icon">✉️</div>왼쪽에서 CSV 업로드 후<br>AI 텍스트를 복사해 결과를 붙여넣으세요.</div></div>
+
+          <!-- 결과 붙여넣기 -->
+          <div id="letter-paste-box" style="display:none;margin-top:14px;">
+            <div class="divider"></div>
+            <label style="margin-bottom:6px;display:block;">AI 결과 붙여넣기</label>
+            <div style="font-size:12px;color:var(--text-3);margin-bottom:8px;">AI가 만들어준 가정통신문을 붙여넣으면 학생별로 자동 분리돼요.<br>각 가정통신문 앞에 <code>###학번</code> 형식으로 구분해달라고 요청해주세요.</div>
+            <textarea id="letter-paste-input" placeholder="AI 결과를 여기에 붙여넣으세요..." style="min-height:120px;"></textarea>
+            <button class="btn btn-dark btn-full" onclick="letterParsePaste()" style="margin-top:8px;">📥 결과 적용하기</button>
+          </div>
+
+          <!-- 내보내기 -->
+          <div id="letter-export-box" style="display:none;margin-top:12px;">
+            <div class="export-box">
+              <div class="export-title">📥 가정통신문 내보내기</div>
+              <button class="btn btn-green btn-full" onclick="letterExport()">📥 CSV 다운로드</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 가정통신문 가이드 모달 -->
+<div class="modal-overlay" id="guide-letter">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-header-title">✉️ 가정통신문 사용 설명서</span>
+      <button class="modal-close" onclick="closeGuide('letter')">✕</button>
+    </div>
+    <div class="modal-slides" id="slides-letter">
+      <div class="modal-slide active">
+        <div class="slide-step">STEP 01 / 05</div>
+        <span class="slide-icon">📋</span>
+        <div class="slide-title">구글 설문지 배포</div>
+        <div class="slide-desc">학생들에게 구글 설문지를 배포해 응답을 수집하세요.<br>설문 문항 안내 버튼을 눌러 문항 순서를 확인하세요.<br><b>첫 번째 문항에 반드시 학번+이름을 입력</b>받도록 해주세요.</div>
+        <div class="slide-tip">💡 구글 설문지 → 응답 탭 → 스프레드시트 연결을 미리 설정해두세요!</div>
+      </div>
+      <div class="modal-slide">
+        <div class="slide-step">STEP 02 / 05</div>
+        <span class="slide-icon">📂</span>
+        <div class="slide-title">CSV 파일 업로드</div>
+        <div class="slide-desc">구글 스프레드시트에서 <b>파일 → 다운로드 → CSV</b>로 저장 후<br>왼쪽 업로드 버튼을 클릭해 파일을 올려주세요.<br>학생별 응답이 자동으로 정리돼요.</div>
+        <div class="slide-tip">💡 학생 정보는 선생님 브라우저에만 저장돼요. 개인정보 걱정 없어요!</div>
+      </div>
+      <div class="modal-slide">
+        <div class="slide-step">STEP 03 / 05</div>
+        <span class="slide-icon">🤖</span>
+        <div class="slide-title">AI용 텍스트 복사</div>
+        <div class="slide-desc">오른쪽 패널에서 <b>10명씩 묶음 복사</b> 버튼을 클릭하거나<br>왼쪽에서 학생별 <b>개별 AI 텍스트 복사</b>를 클릭하세요.<br>복사한 내용을 AI 채팅창에 붙여넣으면 돼요.</div>
+        <div class="slide-tip">💡 10명씩 나눠서 요청하면 AI가 중간에 잘리지 않아요!</div>
+      </div>
+      <div class="modal-slide">
+        <div class="slide-step">STEP 04 / 05</div>
+        <span class="slide-icon">📝</span>
+        <div class="slide-title">AI 결과 붙여넣기</div>
+        <div class="slide-desc">AI한테 요청할 때 마지막에 이 문구를 추가해주세요:<br><b>"각 가정통신문 앞에 ###학번 형식으로 구분해줘"</b><br>받은 결과를 오른쪽 붙여넣기 창에 넣고 적용하기를 클릭하세요.</div>
+        <div class="slide-tip">💡 ###학번 형식이 있어야 학생별로 자동 분리돼요!</div>
+      </div>
+      <div class="modal-slide">
+        <div class="slide-step">STEP 05 / 05</div>
+        <span class="slide-icon">✨</span>
+        <div class="slide-title">수정 및 내보내기</div>
+        <div class="slide-desc">각 학생의 가정통신문을 <b>수정</b> 버튼으로 직접 편집하고<br><b>저장</b>할 수 있어요.<br>완성되면 <b>CSV 다운로드</b>로 내보내세요.</div>
+        <div class="slide-tip">💡 설정 탭에서 JSON 백업을 해두면 나중에도 불러올 수 있어요!</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div class="slide-dots" id="dots-letter"></div>
+      <div class="modal-nav">
+        <button class="btn" onclick="prevSlide('letter')">← 이전</button>
+        <button class="btn btn-dark" onclick="nextSlide('letter')">다음 →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="tab-content" id="t-setting">
   <div class="setting-card">
     <div class="card-title"><div class="card-icon icon-amber">⚙️</div>기본 정보</div>
@@ -1041,53 +1113,6 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
       <div class="modal-nav">
         <button class="btn" onclick="prevSlide('ch')">← 이전</button>
         <button class="btn btn-dark" onclick="nextSlide('ch')">다음 →</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 스포츠 가이드 -->
-<div class="modal-overlay" id="guide-sports">
-  <div class="modal-box">
-    <div class="modal-header">
-      <span class="modal-header-title">🏃 스포츠 탭 사용 설명서</span>
-      <button class="modal-close" onclick="closeGuide('sports')">✕</button>
-    </div>
-    <div class="modal-slides" id="slides-sports">
-      <div class="modal-slide active">
-        <div class="slide-step">STEP 01 / 04</div>
-        <span class="slide-icon">➕</span>
-        <div class="slide-title">종목 추가하기</div>
-        <div class="slide-desc">왼쪽 상단 <b>종목명 입력란</b>에 종목명을 입력하고 <b>+ 추가</b> 버튼을 클릭하세요.<br>예) 배드민턴, 농구, 축구, 배구, 티볼<br>성취기준이나 활동 설명 없이 종목명만 있으면 돼요.</div>
-        <div class="slide-tip">💡 종목은 여러 개 추가할 수 있어요. 탭으로 전환하며 관리해요!</div>
-      </div>
-      <div class="modal-slide">
-        <div class="slide-step">STEP 02 / 04</div>
-        <span class="slide-icon">🤖</span>
-        <div class="slide-title">AI 문구 받기</div>
-        <div class="slide-desc"><b>📋 AI용 텍스트 복사</b> 버튼을 클릭한 뒤,<br>ChatGPT나 Claude 같은 AI 채팅창에 붙여넣으세요.<br>AI가 해당 종목의 <b>기초 기능(그립·자세·스텝·기술 등)</b>을 바탕으로<br>등급 구분 없이 문구를 <b>30개</b> 만들어줘요.</div>
-        <div class="slide-tip">💡 종목마다 30문장씩 생성돼요. 종목이 여러 개면 하나씩 나눠 받아도 좋아요!</div>
-      </div>
-      <div class="modal-slide">
-        <div class="slide-step">STEP 03 / 04</div>
-        <span class="slide-icon">📝</span>
-        <div class="slide-title">문구 뱅크에 저장하기</div>
-        <div class="slide-desc">AI가 만들어준 문구를 <b>문구 뱅크</b> 텍스트창에 붙여넣고<br><b>✨ 형식 정리</b> 버튼을 클릭하세요.<br>자동으로 [종목명] 문장 형식으로 정리돼요.</div>
-        <div class="slide-tip">💡 지양 표현·금지 단어·대체 표현 기준은 세특·창체 탭과 동일해요!</div>
-      </div>
-      <div class="modal-slide">
-        <div class="slide-step">STEP 04 / 04</div>
-        <span class="slide-icon">✨</span>
-        <div class="slide-title">학생별 조합하기</div>
-        <div class="slide-desc">오른쪽 패널에서 <b>반을 선택</b>한 뒤<br><b>✨ 조합하기</b> 버튼을 클릭하면<br>등록된 모든 종목의 문구가 학생별로 자동 조합돼요.</div>
-        <div class="slide-tip">💡 결과는 수정·복사·CSV 내보내기가 모두 가능해요!</div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <div class="slide-dots" id="dots-sports"></div>
-      <div class="modal-nav">
-        <button class="btn" onclick="prevSlide('sports')">← 이전</button>
-        <button class="btn btn-dark" onclick="nextSlide('sports')">다음 →</button>
       </div>
     </div>
   </div>
