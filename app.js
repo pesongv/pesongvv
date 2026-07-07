@@ -1,11 +1,11 @@
 // ── 탭 ──
-const TAB_IDS=['t-se','t-ch','t-sports','t-student','t-setting'];
+const TAB_IDS=['t-se','t-ch','t-student','t-letter','t-setting'];
 function showTab(id){
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   document.querySelectorAll('.nav-tab')[TAB_IDS.indexOf(id)]?.classList.add('active');
-  if(id==='t-se'||id==='t-ch'||id==='t-sports') refreshClassSelects();
+  if(id==='t-se'||id==='t-ch') refreshClassSelects();
 }
 
 // ── 스토리지 ──
@@ -105,7 +105,7 @@ function actDateVal2(a){return actDateVal(a);}
 
 // ── 반 선택 드롭다운 새로고침 ──
 function refreshClassSelects(){
-  ['se-result-class','ch-result-class','sports-result-class'].forEach(id=>{
+  ['se-result-class','ch-result-class'].forEach(id=>{
     const sel=document.getElementById(id);
     if(!sel)return;
     const prev=sel.value;
@@ -525,195 +525,6 @@ function seCombine(){
 }
 
 // ══════════════════════
-// 스포츠 (종목 — 성취기준 없이 기초 기능 세특, 등급 구분 없이 30문장)
-// ══════════════════════
-let activeSportsItem=null;
-
-function addSportsItem(){
-  const input=document.getElementById('sports-input');
-  const name=input.value.trim();
-  if(!name)return showToast('종목명을 입력해주세요!','err');
-  const list=S.get('sports-list',[]);
-  if(list.includes(name))return showToast('이미 있는 종목이에요!','err');
-  list.push(name);
-  S.set('sports-list',list);
-  input.value='';
-  renderSportsList();
-  switchSportsItem(name);
-  refreshClassSelects();
-}
-
-function renderSportsList(){
-  const list=S.get('sports-list',[]);
-  const tabsEl=document.getElementById('sportsSubTabs');
-  const panelsEl=document.getElementById('sportsSubPanels');
-  if(!tabsEl||!panelsEl)return;
-  tabsEl.innerHTML=''; panelsEl.innerHTML='';
-  if(!list.length){
-    tabsEl.innerHTML='<span style="font-size:13px;color:var(--text-3);">종목을 추가해주세요.</span>';
-    return;
-  }
-  list.forEach(sp=>{
-    const btn=document.createElement('button');
-    btn.className='sub-tab'+(sp===activeSportsItem?' active':'');
-    btn.textContent=sp; btn.onclick=()=>switchSportsItem(sp);
-    tabsEl.appendChild(btn);
-    const data=S.get('sports-data-'+sp,{phrases:''});
-    const panel=document.createElement('div');
-    panel.className='sub-panel'+(sp===activeSportsItem?' active':'');
-    panel.id='sports-panel-'+sp;
-    panel.innerHTML=`
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <span style="font-size:15px;font-weight:700;color:var(--text);">${esc(sp)}</span>
-        <button class="btn btn-danger" style="font-size:12px;padding:5px 10px;" onclick="deleteSportsItem('${esc(sp)}')">삭제</button>
-      </div>
-      <div class="ai-box">
-        <div class="ai-box-title">🤖 AI용 텍스트</div>
-        <div class="ai-preview" id="sports-preview-${sp}">미리보기 버튼을 눌러주세요.</div>
-        <div class="btn-row">
-          <button class="btn" style="font-size:12px;" onclick="updateSportsPreview('${sp}')">미리보기</button>
-          <button class="btn btn-dark" style="font-size:12px;" onclick="copySportsAiText('${sp}')">📋 AI용 텍스트 복사</button>
-        </div>
-        <div style="font-size:12px;color:var(--text-3);margin-top:8px;">💡 복사 후 AI 채팅창에 붙여넣으면 기초 기능 문구 30개를 받을 수 있어요!</div>
-      </div>
-      <div class="divider"></div>
-      <div class="phrase-bank">
-        <div class="phrase-bank-hd">
-          <span class="phrase-bank-title">📝 문구 뱅크</span>
-          <div style="display:flex;gap:5px;align-items:center;">
-            <span class="phrase-badge" id="sports-count-${sp}">0개</span>
-            <button class="btn btn-danger" style="font-size:11px;padding:2px 8px;" onclick="clearPhrases('sports-phrases-${sp}','sports-count-${sp}','${sp}','sports')">전체 삭제</button>
-          </div>
-        </div>
-        <div class="phrase-hint">형식: <code>[종목명] 문장</code> 으로 한 줄씩, 등급 구분 없이<br>예) <code>[배드민턴]</code> 정확한 그립과 안정된 스탠스로 셔틀콕을 컨트롤하는 모습을 보임.</div>
-        <div class="format-row">
-          <button class="btn" style="font-size:12px;" onclick="formatPhrases('sports-phrases-${sp}','sports-count-${sp}','${sp}','sports')">✨ 형식 정리</button>
-          <span style="font-size:12px;color:var(--text-3);">AI 문구를 붙여넣고 클릭하세요</span>
-        </div>
-        <textarea id="sports-phrases-${sp}" placeholder="AI에게 받은 문구를 여기에 붙여넣으세요..." oninput="saveSportsData('${sp}')" style="min-height:160px;">${esc(data.phrases)}</textarea>
-      </div>`;
-    panelsEl.appendChild(panel);
-    updateCount('sports-phrases-'+sp,'sports-count-'+sp);
-  });
-}
-
-function switchSportsItem(sp){
-  activeSportsItem=sp;
-  document.querySelectorAll('#sportsSubTabs .sub-tab').forEach(b=>b.classList.toggle('active',b.textContent===sp));
-  document.querySelectorAll('#sportsSubPanels .sub-panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('sports-panel-'+sp)?.classList.add('active');
-}
-
-function saveSportsData(sp){
-  S.set('sports-data-'+sp,{phrases:document.getElementById('sports-phrases-'+sp)?.value||''});
-  updateCount('sports-phrases-'+sp,'sports-count-'+sp);
-}
-
-function deleteSportsItem(sp){
-  if(!confirm(`"${sp}" 종목을 삭제할까요?`))return;
-  const list=S.get('sports-list',[]).filter(x=>x!==sp);
-  S.set('sports-list',list);
-  S.del('sports-data-'+sp);
-  activeSportsItem=list[0]||null;
-  renderSportsList();
-  refreshClassSelects();
-}
-
-function updateSportsPreview(sp){
-  document.getElementById('sports-preview-'+sp).textContent=`[스포츠 기초 기능 세특 문구 생성 요청]
-종목: ${sp}
-
-별도의 성취기준이나 활동 설명은 없습니다. "${sp}" 종목의 일반적인 기초 기능(그립/자세, 스텝, 기본 기술, 규칙 이해 등 해당 종목의 실제 기초 기능과 용어)을 기준으로, 중학교 생활기록부 세특 문구를 작성해주세요.
-
-원칙:
-- 관찰자 시점 / 주어 없이 / 긍정적 표현
-- 단순히 ~보임.으로 끝내지 말고 ~고, ~며, ~다 등 연결어미를 활용해 풍부하게 작성
-- 구체적인 행동과 교육적 성취를 2~3문장으로 표현
-- 추상적인 표현 절대 금지, 반드시 관찰 가능한 구체적 행동으로 서술
-- "${sp}"의 실제 기초 기능·용어(예: 그립, 스텝, 자세, 타법, 패스, 드리블, 슈팅, 리시브 등 종목에 맞는 용어)를 다양하게 활용
-- 등급 구분 없이 하나의 수준(고르게 우수한 수행)으로 작성
-
-지양 표현 (절대 사용 금지):
-~라고 느낌, ~이해함, ~생각함, ~생각해 봄, ~다짐함, ~배움, ~알게 됨, ~나타냄, ~드러냄,
-~노력함, ~노력하고 있음, ~하려고 함, ~하고자 함, ~할 수 있음, ~인 것 같음
-
-절대 사용 금지 단어 (생활기록부 기재 불가 항목):
-수행평가, 평가, 시험, 모의고사, 전국연합평가, 인증시험
-대회, 수상, 자격증, 논문, 소논문
-해외활동, 해외봉사, 도서출간, 특허, 장학생, 장학금
-부모, 친인척, 가족
-네이버, EBS, Zoom, 구글, 유튜브, 페이스북, 인스타그램, 에버랜드, 레고, 패들렛, 띵커벨, 트위터, 커리어넷, 미리캔버스, KTX
-학교명, 재단명, 기관명, 단체명, 조직명
-
-대체 표현 (반드시 아래 표현을 적극 활용):
-~활동지를 작성함, ~발표함, ~기록함, ~표현함, ~하는 모습을 보임,
-~능력이 뛰어남, ~대해 토의함, ~비교함, ~대안을 제시함,
-~두각을 보임, ~한 모습이 인상적임, ~한 모습이 돋보임,
-~심도 있게 탐색함, ~포부를 밝힘, ~하여 학생들에게 좋은 반응을 얻음,
-~활동 중, ~기능 연습 중, ~과정에서, ~활동을 통해, ~연습 과정에서, ~기술 습득 과정에서
-
-반드시 아래 형식으로 작성해주세요.
-⚠️ 종목명은 위에 입력된 그대로 사용하세요. 띄어쓰기, 맞춤법, 글자 하나도 절대 바꾸지 마세요.
-⚠️ 문구 안에 종목명을 자연스럽게 포함하여 작성하세요. 문구만 단독으로 쓰지 말고 종목명이 문장 안에 녹아들도록 작성해주세요.
-⚠️ 등급 구분(A/B/C/D) 없이 총 30개를 작성해주세요. 30개 모두 서로 다른 문장으로, 표현과 어휘가 겹치지 않게 다양하게 작성해주세요.
-형식: [종목명] 문장
-예시) 종목이 "배드민턴" 이라면:
-[배드민턴] 배드민턴 활동에서 정확한 그립과 안정된 스탠스를 바탕으로 셔틀콕을 정교하게 컨트롤하는 모습을 보임.
-[배드민턴] 배드민턴 활동에서 풋워크를 활용해 빠르게 위치를 이동하며 안정적으로 스트로크를 구사하는 모습을 보임.
-
-추가 질문 없이 바로 작성해주세요.
-작성된 문구 전체를 코드블록 없이 깔끔하게 출력해주세요.`;
-}
-
-function copySportsAiText(sp){
-  updateSportsPreview(sp);
-  navigator.clipboard.writeText(document.getElementById('sports-preview-'+sp).textContent)
-    .then(()=>showToast('복사됐어요! AI에 붙여넣으세요 😊'));
-}
-
-// ── 스포츠 조합 ──
-function sportsCombine(){
-  const cid=document.getElementById('sports-result-class')?.value;
-  if(!cid)return showToast('반을 선택해주세요!','err');
-  const list=S.get('sports-list',[]);
-  if(!list.length)return showToast('종목을 먼저 추가해주세요!','err');
-
-  const map={};
-  list.forEach(sp=>{
-    const phrases=S.get('sports-data-'+sp,{phrases:''}).phrases;
-    const parsed=getPhrasesByActivity(phrases);
-    map[sp]=parsed[sp]||[];
-  });
-  const activeSports=list.filter(sp=>map[sp].length);
-  if(!activeSports.length)return showToast('문구 뱅크에 문구를 먼저 등록해주세요! [종목명] 문장 형식으로 등록해주세요.','err');
-  const students=getStudentsOfClass(cid);
-  if(!students.length)return showToast('학생을 먼저 등록해주세요!','err');
-
-  const usedMap={};
-  activeSports.forEach(sp=>{usedMap[sp]=[];});
-
-  const results=students.map(s=>{
-    const parts=activeSports.map(sp=>{
-      const ps=map[sp];
-      let avail=ps.map((_,i)=>i).filter(i=>!usedMap[sp].includes(i));
-      if(avail.length<1){usedMap[sp]=[];avail=ps.map((_,i)=>i);}
-      const shuffled=[...avail].sort(()=>Math.random()-0.5);
-      const idx=shuffled[0];
-      usedMap[sp].push(idx);
-      return ps[idx];
-    }).filter(Boolean);
-    const raw=parts.join(' ');
-    return{studentId:s.id,gender:s.gender,text:correctText(raw)};
-  });
-
-  window._sportsResults=results;
-  S.set('sports-last-results',results);
-  renderCombineResults(results,'sports-combine-results',false);
-  document.getElementById('sports-export-box').style.display='block';
-  showToast('조합 완료!');
-}
-
-// ══════════════════════
 // 창체
 // ══════════════════════
 let activeChTab='자율';
@@ -984,9 +795,9 @@ function toggleEdit(rid,containerId,studentId){
   if(isEditing){
     el.contentEditable='false';
     const newText=el.innerText;
-    const arr=containerId.startsWith('se')?window._seResults:containerId.startsWith('sports')?window._sportsResults:window._chResults;
+    const arr=containerId.startsWith('se')?window._seResults:window._chResults;
     const r=arr?.find(x=>x.studentId===studentId);
-    if(r){r.text=newText;S.set(containerId.startsWith('se')?'se-last-results':containerId.startsWith('sports')?'sports-last-results':'ch-last-results',arr);}
+    if(r){r.text=newText;S.set(containerId.startsWith('se')?'se-last-results':'ch-last-results',arr);}
     const card=el.closest('.result-card');
     const chip=card?.querySelector('.byte-chip');
     if(chip){const b=calcBytes(newText);chip.textContent=b.toLocaleString()+' B';chip.className='byte-chip '+(b>2000?'byte-over':b>1500?'byte-warn':'byte-ok');}
@@ -1079,8 +890,13 @@ function removeStudent(sid,cid){
 
 function saveClasses(){
   const cls=[];
+  const seenNames=new Set();
   document.querySelectorAll('.class-panel').forEach(p=>{
     const cid=p.id.replace('cpanel_','');
+    const name=document.getElementById('cname_'+cid)?.value||'반';
+    // 같은 이름의 반이 중복 저장되지 않도록 방지
+    if(seenNames.has(name))return;
+    seenNames.add(name);
     const students=[];
     document.querySelectorAll('#srows_'+cid+' .student-row').forEach(r=>{
       students.push({
@@ -1088,12 +904,268 @@ function saveClasses(){
         gender:r.querySelector('[id$="_g"]')?.value||'남학생'
       });
     });
-    cls.push({cid,name:document.getElementById('cname_'+cid)?.value||'반',students});
+    cls.push({cid,name,students});
   });
   S.set('classes',cls);
 }
 
+// ══════════════════════
+// 가정통신문
+// ══════════════════════
+const LETTER_QUESTIONS=[
+  '학교생활','친구관계','고민','학습','목표','취미/관심사','선생님께'
+];
+let letterStudents=[];
+
+function toggleLetterGuide(){
+  const content=document.getElementById('letter-guide-content');
+  const arrow=document.getElementById('letter-guide-arrow');
+  if(!content)return;
+  const isOpen=content.style.display!=='none';
+  content.style.display=isOpen?'none':'block';
+  arrow.textContent=isOpen?'›':'∨';
+}
+
+function letterLoadCSV(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const text=ev.target.result;
+      const rows=parseCSV(text);
+      if(rows.length<2)return showToast('데이터가 없어요!','err');
+      // 첫 행은 헤더, 나머지가 데이터
+      const data=rows.slice(1).filter(r=>r.length>1&&r[1]?.trim());
+      letterStudents=data.map(r=>({
+        nameId:r[1]?.trim()||'',
+        q1:r[2]?.trim()||'',
+        q2:r[3]?.trim()||'',
+        q3:r[4]?.trim()||'',
+        q4:r[5]?.trim()||'',
+        q5:r[6]?.trim()||'',
+        q6:r[7]?.trim()||'',
+        q7:r[8]?.trim()||'',
+        letter:''
+      }));
+      S.set('letter-students',letterStudents);
+      renderLetterStudents();
+      renderLetterBatchBtns();
+      document.getElementById('letter-paste-box').style.display='block';
+      showToast(`${letterStudents.length}명 로드 완료!`);
+    }catch(err){showToast('CSV 파일을 읽을 수 없어요!','err');}
+  };
+  reader.readAsText(file,'UTF-8');
+  e.target.value='';
+}
+
+function parseCSV(text){
+  const rows=[];
+  const lines=text.split('\n');
+  lines.forEach(line=>{
+    if(!line.trim())return;
+    const cols=[];
+    let cur='',inQ=false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i];
+      if(c==='"'){inQ=!inQ;}
+      else if(c===','&&!inQ){cols.push(cur.trim());cur='';}
+      else{cur+=c;}
+    }
+    cols.push(cur.trim());
+    rows.push(cols);
+  });
+  return rows;
+}
+
+function renderLetterStudents(){
+  const container=document.getElementById('letter-student-list');
+  if(!letterStudents.length){container.innerHTML='<div class="empty"><div class="empty-icon">📋</div>CSV 파일을 업로드하면<br>학생 목록이 나타나요.</div>';return;}
+  let html='<div style="display:flex;flex-direction:column;gap:8px;">';
+  letterStudents.forEach((s,i)=>{
+    html+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-xs);padding:12px 14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:13px;font-weight:700;color:var(--text);">${esc(s.nameId)}</span>
+        <button class="btn" style="font-size:11px;padding:4px 9px;" onclick="copyLetterAiText(${i})">📋 AI 텍스트 복사</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        ${LETTER_QUESTIONS.map((q,qi)=>`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:7px 9px;">
+          <div style="font-size:10px;color:var(--text-3);font-weight:600;margin-bottom:3px;">${esc(q)}</div>
+          <div style="font-size:12px;color:var(--text-2);line-height:1.6;">${esc(s['q'+(qi+1)])||'<span style="color:var(--text-3);">미응답</span>'}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  });
+  html+='</div>';
+  container.innerHTML=html;
+  renderLetterResults();
+}
+
+function renderLetterBatchBtns(){
+  const box=document.getElementById('letter-batch-btns');
+  const row=document.getElementById('letter-batch-row');
+  if(!box||!row)return;
+  if(!letterStudents.length){box.style.display='none';return;}
+  box.style.display='block';
+  row.innerHTML='';
+  const total=letterStudents.length;
+  const size=10;
+  for(let i=0;i<total;i+=size){
+    const end=Math.min(i+size,total);
+    const btn=document.createElement('button');
+    btn.className='btn btn-dark';
+    btn.style.fontSize='12px';
+    btn.textContent=`📋 ${i+1}~${end}번 복사`;
+    btn.onclick=()=>copyLetterBatch(i,end);
+    row.appendChild(btn);
+  }
+}
+
+function getLetterAiText(i){
+  const s=letterStudents[i];
+  if(!s)return'';
+  return`[가정통신문 작성 요청]
+학생: ${s.nameId}
+
+설문 응답:
+1. 학교생활: ${s.q1||'미응답'}
+2. 친구관계: ${s.q2||'미응답'}
+3. 고민: ${s.q3||'미응답'}
+4. 학습: ${s.q4||'미응답'}
+5. 목표: ${s.q5||'미응답'}
+6. 취미/관심사: ${s.q6||'미응답'}
+7. 선생님께: ${s.q7||'미응답'}
+
+위 내용을 바탕으로 학부모에게 보내는 가정통신문을 작성해주세요.
+
+원칙:
+- 학부모에게 보내는 편지 형식, 존댓말 사용
+- 반드시 3문단으로 구성
+  1문단: 학교생활 + 친구관계 (밝고 긍정적으로)
+  2문단: 학습 태도 + 고민 (부드럽고 따뜻하게, 고민은 성장 가능성으로 표현)
+  3문단: 목표 + 취미/관심사 + 마무리 (긍정적, 발전 가능성 응원, 따뜻한 마무리)
+- 학생의 긍정적인 면 강조
+- 고민은 문제가 아닌 성장의 기회로 표현
+- 선생님께 하고 싶은 말은 내용에 자연스럽게 녹여서 표현
+- 구체적이고 개별화된 내용으로 작성
+- 각 가정통신문 앞에 ###${s.nameId} 형식으로 구분해주세요`;
+}
+
+function copyLetterAiText(i){
+  const text=getLetterAiText(i);
+  navigator.clipboard.writeText(text).then(()=>showToast('복사됐어요! AI에 붙여넣으세요 😊'));
+}
+
+function copyLetterBatch(start,end){
+  const texts=[];
+  for(let i=start;i<end;i++){
+    texts.push(getLetterAiText(i));
+  }
+  const combined=texts.join('\n\n---\n\n');
+  navigator.clipboard.writeText(combined).then(()=>showToast(`${start+1}~${end}번 복사됐어요!`));
+}
+
+function letterParsePaste(){
+  const raw=document.getElementById('letter-paste-input')?.value||'';
+  if(!raw.trim())return showToast('AI 결과를 붙여넣어 주세요!','err');
+  // ###학번이름 으로 분리
+  const parts=raw.split(/###/).filter(p=>p.trim());
+  let matched=0;
+  parts.forEach(part=>{
+    const firstLine=part.split('\n')[0].trim();
+    const content=part.split('\n').slice(1).join('\n').trim();
+    if(!content)return;
+    // 학생 찾기
+    const idx=letterStudents.findIndex(s=>s.nameId===firstLine||firstLine.includes(s.nameId)||s.nameId.includes(firstLine));
+    if(idx>=0){
+      letterStudents[idx].letter=content;
+      matched++;
+    }
+  });
+  S.set('letter-students',letterStudents);
+  renderLetterResults();
+  document.getElementById('letter-paste-input').value='';
+  document.getElementById('letter-export-box').style.display='block';
+  showToast(`${matched}명 가정통신문 적용 완료!`);
+}
+
+function renderLetterResults(){
+  const container=document.getElementById('letter-results');
+  const hasLetters=letterStudents.some(s=>s.letter);
+  if(!letterStudents.length){
+    container.innerHTML='<div class="empty"><div class="empty-icon">✉️</div>CSV 업로드 후<br>AI 텍스트를 복사해 결과를 붙여넣으세요.</div>';
+    return;
+  }
+  let html='<div style="display:flex;flex-direction:column;gap:8px;">';
+  letterStudents.forEach((s,i)=>{
+    const rid='letter_'+i;
+    const hasLetter=!!s.letter;
+    html+=`<div class="result-card" style="${!hasLetter?'opacity:0.5':''}">
+      <div class="result-card-hd">
+        <div class="result-sid">${esc(s.nameId)}</div>
+      </div>
+      <div class="result-text" id="${rid}" contenteditable="false">${hasLetter?esc(s.letter):'<span style="color:var(--text-3);font-size:13px;">미작성 — AI 텍스트를 복사해 결과를 붙여넣으세요</span>'}</div>
+      ${hasLetter?`<div class="result-actions">
+        <button class="btn" style="font-size:12px;padding:5px 10px;" onclick="copyLetterResult('${rid}')">복사</button>
+        <button class="btn" style="font-size:12px;padding:5px 10px;" onclick="toggleLetterEdit('${rid}',${i})">수정</button>
+      </div>`:''}
+    </div>`;
+  });
+  html+='</div>';
+  container.innerHTML=html;
+}
+
+function copyLetterResult(rid){
+  const el=document.getElementById(rid);
+  if(!el)return;
+  navigator.clipboard.writeText(el.innerText).then(()=>showToast('복사됐어요!'));
+}
+
+function toggleLetterEdit(rid,i){
+  const el=document.getElementById(rid);
+  if(!el)return;
+  const isEditing=el.contentEditable==='true';
+  if(isEditing){
+    el.contentEditable='false';
+    letterStudents[i].letter=el.innerText;
+    S.set('letter-students',letterStudents);
+    el.parentElement.querySelector('button:last-child').textContent='수정';
+    showToast('저장됐어요!');
+  } else {
+    el.contentEditable='true';el.focus();
+    el.parentElement.querySelector('button:last-child').textContent='저장';
+  }
+}
+
+function letterExport(){
+  if(!letterStudents.length)return showToast('데이터가 없어요!','err');
+  let csv='학번이름,가정통신문\n';
+  letterStudents.forEach(s=>{
+    csv+=`"${s.nameId}","${(s.letter||'').replace(/"/g,'""')}"\n`;
+  });
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='가정통신문_'+new Date().toLocaleDateString('ko-KR').replace(/\.\s*/g,'-').replace(/-$/,'')+'.csv';
+  a.click(); URL.revokeObjectURL(url);
+  showToast('다운로드 시작!');
+}
+
+
+function cleanupClassData(){
+  const cls=S.get('classes',[]);
+  const seen=new Set();
+  const cleaned=[];
+  cls.forEach(c=>{
+    if(!c.name||seen.has(c.name))return;
+    seen.add(c.name);
+    cleaned.push(c);
+  });
+  S.set('classes',cleaned);
+}
+
 function loadClasses(){
+  cleanupClassData();
   const cls=S.get('classes',[]);
   if(!cls.length){addClass('1반');return;}
 
@@ -1239,7 +1311,6 @@ function formatPhrases(textareaId, countId, key, type){
   if(!result.length)return showToast('정리할 문구를 찾지 못했어요.','err');
   ta.value=result.join('\n');
   if(type==='se')saveSeData(key);
-  else if(type==='sports')saveSportsData(key);
   else saveChData(key);
   updateCount(textareaId,countId);
   showToast(`${result.length}개 문구 정리 완료!`);
@@ -1251,7 +1322,6 @@ function clearPhrases(textareaId, countId, key, type){
   if(!confirm('문구 뱅크를 전체 삭제할까요?'))return;
   ta.value='';
   if(type==='se')saveSeData(key);
-  else if(type==='sports')saveSportsData(key);
   else saveChData(key);
   updateCount(textareaId,countId);
   showToast('삭제됐어요!');
@@ -1265,11 +1335,6 @@ function exportExcel(tab){
     results=window._seResults||S.get('se-last-results',[]);
     type=document.getElementById('se-export-type')?.value||'se';
     subject=document.getElementById('se-export-subject')?.value.trim()||'';
-  } else if(tab==='sports'){
-    results=window._sportsResults||S.get('sports-last-results',[]);
-    type=document.getElementById('sports-export-type')?.value||'se';
-    subject=document.getElementById('sports-export-subject')?.value.trim()||'체육';
-    activity=subject;
   } else {
     results=window._chResults||S.get('ch-last-results',[]);
     type=document.getElementById('ch-export-type')?.value||'simple';
@@ -1386,7 +1451,7 @@ function prevSlide(id){
 // ESC 키로 닫기
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
-    ['se','ch','sports','student'].forEach(id=>closeGuide(id));
+    ['se','ch','student'].forEach(id=>closeGuide(id));
   }
 });
 
@@ -1414,16 +1479,18 @@ window.onload=()=>{
     }
   });
   renderChPanel('자율');
-  const sportsList=S.get('sports-list',[]);
-  if(sportsList.length){
-    activeSportsItem=sportsList[0];
-    renderSportsList();
-  }
   refreshClassSelects();
   const seRes=S.get('se-last-results',[]);
   if(seRes.length){window._seResults=seRes;renderCombineResults(seRes,'se-combine-results',true);document.getElementById('se-export-box').style.display='block';}
   const chRes=S.get('ch-last-results',[]);
   if(chRes.length){window._chResults=chRes;renderCombineResults(chRes,'ch-combine-results',false);document.getElementById('ch-export-box').style.display='block';}
-  const sportsRes=S.get('sports-last-results',[]);
-  if(sportsRes.length){window._sportsResults=sportsRes;renderCombineResults(sportsRes,'sports-combine-results',false);document.getElementById('sports-export-box').style.display='block';}
+  // 가정통신문 데이터 복원
+  const savedLetters=S.get('letter-students',[]);
+  if(savedLetters.length){
+    letterStudents=savedLetters;
+    renderLetterStudents();
+    renderLetterBatchBtns();
+    document.getElementById('letter-paste-box').style.display='block';
+    if(savedLetters.some(s=>s.letter))document.getElementById('letter-export-box').style.display='block';
+  }
 };
