@@ -1206,7 +1206,7 @@ function letterReset(){
   showToast('초기화됐어요!');
 }
 
-
+function letterExport(){
   if(!letterStudents.length)return showToast('데이터가 없어요!','err');
   let csv='학번이름,가정통신문\n';
   letterStudents.forEach(s=>{csv+=`"${s.nameId}","${(s.letter||'').replace(/"/g,'""')}"\n`;});
