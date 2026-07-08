@@ -1080,11 +1080,18 @@ function renderLetterBatchBtns(){
   }
 }
 
+function getStudentIdOnly(nameId){
+  // 학번+이름에서 학번만 추출 (숫자로 시작하는 부분)
+  const match=nameId.match(/^(\d+)/);
+  return match?match[1]:nameId;
+}
+
 function getLetterAiText(i){
   const s=letterStudents[i];
   if(!s)return'';
+  const idOnly=getStudentIdOnly(s.nameId);
   return`[가정통신문 작성 요청]
-학생: ${s.nameId}
+학생 번호: ${idOnly}
 
 설문 응답:
 1. 학교생활: ${s.q1||'미응답'}
@@ -1107,7 +1114,7 @@ function getLetterAiText(i){
 - 고민은 문제가 아닌 성장의 기회로 표현
 - 선생님께 하고 싶은 말은 내용에 자연스럽게 녹여서 표현
 - 구체적이고 개별화된 내용으로 작성
-- 각 가정통신문 앞에 ###${s.nameId} 형식으로 구분해주세요`;
+- 각 가정통신문 앞에 ###${idOnly} 형식으로 구분해주세요`;
 }
 
 function copyLetterAiText(i){navigator.clipboard.writeText(getLetterAiText(i)).then(()=>showToast('복사됐어요! AI에 붙여넣으세요 😊'));}
@@ -1127,7 +1134,10 @@ function letterParsePaste(){
     const firstLine=part.split('\n')[0].trim();
     const content=part.split('\n').slice(1).join('\n').trim();
     if(!content)return;
-    const idx=letterStudents.findIndex(s=>s.nameId===firstLine||firstLine.includes(s.nameId)||s.nameId.includes(firstLine));
+    const idx=letterStudents.findIndex(s=>{
+      const idOnly=getStudentIdOnly(s.nameId);
+      return idOnly===firstLine||s.nameId===firstLine||firstLine.includes(idOnly);
+    });
     if(idx>=0){letterStudents[idx].letter=content;matched++;}
   });
   S.set('letter-students',letterStudents);
