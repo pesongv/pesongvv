@@ -1168,6 +1168,7 @@ function renderLetterResults(){
       ${hasLetter?`<div class="result-actions">
         <button class="btn" style="font-size:12px;padding:5px 10px;" onclick="copyLetterResult('${rid}')">복사</button>
         <button class="btn" style="font-size:12px;padding:5px 10px;" onclick="toggleLetterEdit('${rid}',${i})">수정</button>
+        <button class="btn btn-danger" style="font-size:12px;padding:5px 10px;" onclick="deleteLetterResult(${i})">삭제</button>
       </div>`:''}
     </div>`;
   });
@@ -1206,7 +1207,25 @@ function letterReset(){
   showToast('초기화됐어요!');
 }
 
-function letterExport(){
+function deleteLetterResult(i){
+  if(!confirm('이 학생의 가정통신문을 삭제할까요?'))return;
+  letterStudents[i].letter='';
+  S.set('letter-students',letterStudents);
+  renderLetterResults();
+  showToast('삭제됐어요!');
+}
+
+function deleteAllLetterResults(){
+  if(!letterStudents.some(s=>s.letter))return showToast('삭제할 결과가 없어요!','err');
+  if(!confirm('전체 가정통신문 결과를 삭제할까요?'))return;
+  letterStudents.forEach(s=>s.letter='');
+  S.set('letter-students',letterStudents);
+  renderLetterResults();
+  document.getElementById('letter-export-box').style.display='none';
+  showToast('전체 삭제됐어요!');
+}
+
+
   if(!letterStudents.length)return showToast('데이터가 없어요!','err');
   let csv='학번이름,가정통신문\n';
   letterStudents.forEach(s=>{csv+=`"${s.nameId}","${(s.letter||'').replace(/"/g,'""')}"\n`;});
