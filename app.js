@@ -1193,7 +1193,20 @@ function toggleLetterEdit(rid,i){
   }
 }
 
-function letterExport(){
+function letterReset(){
+  if(!letterStudents.length)return showToast('삭제할 데이터가 없어요!','err');
+  if(!confirm('가정통신문 데이터를 전체 초기화할까요? 되돌릴 수 없어요!'))return;
+  letterStudents=[];
+  S.del('letter-students');
+  renderLetterStudents();
+  renderLetterBatchBtns();
+  document.getElementById('letter-paste-box').style.display='none';
+  document.getElementById('letter-export-box').style.display='none';
+  document.getElementById('letter-results').innerHTML='<div class="empty"><div class="empty-icon">✉️</div>CSV 업로드 후<br>AI 텍스트를 복사해 결과를 붙여넣으세요.</div>';
+  showToast('초기화됐어요!');
+}
+
+
   if(!letterStudents.length)return showToast('데이터가 없어요!','err');
   let csv='학번이름,가정통신문\n';
   letterStudents.forEach(s=>{csv+=`"${s.nameId}","${(s.letter||'').replace(/"/g,'""')}"\n`;});
