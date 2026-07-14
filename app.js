@@ -1116,7 +1116,7 @@ function getLetterAiText(i){
 - 반드시 3문단으로 구성하되, 각 항목을 억지로 끼워 맞추지 말고 전체 내용이 자연스럽게 흐르도록 작성
   1문단: 학생의 전반적인 학교생활 모습 (밝고 긍정적으로)
   2문단: 학습 태도와 성장 과정 (따뜻하고 격려하는 톤으로)
-  3문단: 앞으로의 가능성과 담임의 응원 메시지 (따뜻하고 희망적인 마무리)
+  3문단: 학생에 대한 담임의 진심 + 학부모에 대한 감사 + 응원으로 자연스럽게 마무리 (항목 나열 금지, 편지 마무리처럼 따뜻하게)
 - 억지로 취미나 목표를 끼워 넣지 말고, 자연스럽게 녹아들 때만 활용
 - 학생의 긍정적인 면 강조
 - 고민은 문제가 아닌 성장의 기회로 자연스럽게 표현
@@ -1131,7 +1131,7 @@ function copyLetterAiText(i){navigator.clipboard.writeText(getLetterAiText(i)).t
 function copyLetterBatch(start,end){
   const texts=[];
   for(let i=start;i<end;i++){texts.push(getLetterAiText(i));}
-  navigator.clipboard.writeText(texts.join('\n\n---\n\n')).then(()=>showToast(`${start+1}~${end}번 복사됐어요!`));
+  navigator.clipboard.writeText(texts.join('\n\n')).then(()=>showToast(`${start+1}~${end}번 복사됐어요!`));
 }
 
 function letterParsePaste(){
