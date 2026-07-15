@@ -267,6 +267,7 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
   <button class="nav-tab" onclick="showTab('t-sports')">🏃 스포츠</button>
   <button class="nav-tab" onclick="showTab('t-student')">👥 학생관리</button>
   <button class="nav-tab" onclick="showTab('t-letter')">✉️ 가정통신문</button>
+  <button class="nav-tab" onclick="showTab('t-convert')">🔄 통지표 변환</button>
   <button class="nav-tab" onclick="showTab('t-setting')">⚙️ 설정</button>
 </nav>
 
@@ -488,6 +489,55 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
 </div>
 
 <!-- ══ 설정 ══ -->
+<!-- ══ 통지표 변환 ══ -->
+<div class="tab-content" id="t-convert">
+  <div class="split-layout">
+    <div class="split-left">
+      <div class="card">
+        <div class="card-title"><div class="card-icon icon-dark">🔄</div>통지표용 변환</div>
+        <div style="font-size:13px;color:var(--text-2);margin-bottom:14px;line-height:1.8;">
+          나이스에서 다운받은 CSV 파일을 업로드하면<br>
+          개조식 어미(<code style="background:var(--bg);border:1px solid var(--border);padding:1px 5px;border-radius:3px;">~임. ~함. ~보임.</code>)를<br>
+          서술식(<code style="background:var(--bg);border:1px solid var(--border);padding:1px 5px;border-radius:3px;">~입니다. ~합니다. ~보입니다.</code>)으로 자동 변환해요.
+        </div>
+        <div style="background:var(--blue-soft);border:1px solid #c5d9f5;border-radius:var(--radius-xs);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--blue);">
+          💡 과세특(평가결과 열)과 자유학기(교육활동 열) 파일 모두 지원해요!
+        </div>
+        <div style="border:1.5px dashed var(--border-strong);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;" onclick="document.getElementById('convert-csv').click()">
+          <div style="font-size:28px;margin-bottom:8px;">📂</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;">CSV 파일 업로드</div>
+          <div style="font-size:12px;color:var(--text-3);">나이스 → 과목별 서술평가 관리 또는 자유학기 활동영역별 특기사항</div>
+          <input type="file" id="convert-csv" accept=".csv" style="display:none;" onchange="convertLoadCSV(event)">
+        </div>
+        <div id="convert-info" style="display:none;margin-top:14px;">
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-xs);padding:12px 14px;">
+            <div style="font-size:12px;color:var(--text-3);margin-bottom:4px;">파일 정보</div>
+            <div id="convert-file-info" style="font-size:13px;font-weight:600;color:var(--text);"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="split-right">
+      <div class="split-right-sticky">
+        <div class="card">
+          <div class="result-header-bar">
+            <div class="result-title">🔄 변환 결과</div>
+            <button class="btn btn-danger" style="font-size:11px;padding:4px 9px;" onclick="convertReset()">초기화</button>
+          </div>
+          <div id="convert-results"><div class="empty"><div class="empty-icon">🔄</div>CSV 파일을 업로드하면<br>변환 결과가 나타나요.</div></div>
+          <div id="convert-export-box" style="display:none;margin-top:12px;">
+            <div class="export-box">
+              <div class="export-title">📥 변환 파일 다운로드</div>
+              <button class="btn btn-green btn-full" onclick="convertExport()">📥 CSV 다운로드</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="tab-content" id="t-setting">
   <div class="setting-card">
     <div class="card-title"><div class="card-icon icon-amber">⚙️</div>기본 정보</div>
