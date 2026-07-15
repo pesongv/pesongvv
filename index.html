@@ -495,26 +495,52 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
     <div class="split-left">
       <div class="card">
         <div class="card-title"><div class="card-icon icon-dark">🔄</div>통지표용 변환</div>
-        <div style="font-size:13px;color:var(--text-2);margin-bottom:14px;line-height:1.8;">
-          나이스에서 다운받은 CSV 파일을 업로드하면<br>
-          개조식 어미(<code style="background:var(--bg);border:1px solid var(--border);padding:1px 5px;border-radius:3px;">~임. ~함. ~보임.</code>)를<br>
-          서술식(<code style="background:var(--bg);border:1px solid var(--border);padding:1px 5px;border-radius:3px;">~입니다. ~합니다. ~보입니다.</code>)으로 자동 변환해요.
+
+        <!-- 모드 선택 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+          <div id="mode-auto-btn" onclick="selectConvertMode('auto')" style="border:2px solid var(--accent);border-radius:var(--radius-sm);padding:14px;cursor:pointer;background:var(--accent);">
+            <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">⚡ 자동 변환</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.8);line-height:1.6;">파일 업로드 즉시<br>서술어만 과거형으로 변환</div>
+          </div>
+          <div id="mode-ai-btn" onclick="selectConvertMode('ai')" style="border:2px solid var(--border);border-radius:var(--radius-sm);padding:14px;cursor:pointer;background:var(--bg);">
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">🤖 AI 요약 변환</div>
+            <div style="font-size:11px;color:var(--text-3);line-height:1.6;">AI가 핵심 요약 +<br>과거형 서술어로 재작성</div>
+          </div>
         </div>
+
         <div style="background:var(--blue-soft);border:1px solid #c5d9f5;border-radius:var(--radius-xs);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--blue);">
           💡 과세특(평가결과 열)과 자유학기(교육활동 열) 파일 모두 지원해요!
         </div>
+
         <div style="border:1.5px dashed var(--border-strong);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;" onclick="document.getElementById('convert-csv').click()">
           <div style="font-size:28px;margin-bottom:8px;">📂</div>
           <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;">CSV 파일 업로드</div>
           <div style="font-size:12px;color:var(--text-3);">나이스 → 과목별 서술평가 관리 또는 자유학기 활동영역별 특기사항</div>
           <input type="file" id="convert-csv" accept=".csv" style="display:none;" onchange="convertLoadCSV(event)">
         </div>
+
         <div id="convert-info" style="display:none;margin-top:14px;">
           <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-xs);padding:12px 14px;">
             <div style="font-size:12px;color:var(--text-3);margin-bottom:4px;">파일 정보</div>
             <div id="convert-file-info" style="font-size:13px;font-weight:600;color:var(--text);"></div>
           </div>
         </div>
+
+        <!-- AI 모드: 원본 목록 + 복사 버튼 -->
+        <div id="convert-ai-panel" style="display:none;margin-top:14px;">
+          <div class="divider"></div>
+          <label style="margin-bottom:8px;display:block;">AI용 텍스트 복사</label>
+          <div class="btn-row" style="margin-bottom:8px;" id="convert-batch-row"></div>
+          <div style="font-size:11px;color:var(--text-3);">💡 무료 AI는 3명씩, 유료는 5명씩 요청하면 안정적이에요!</div>
+          <div class="divider"></div>
+          <label style="margin-bottom:6px;display:block;">AI 결과 붙여넣기</label>
+          <div style="font-size:12px;color:var(--text-3);margin-bottom:8px;">AI 결과 앞에 <code style="background:var(--bg);border:1px solid var(--border);padding:1px 4px;border-radius:3px;">###반/번호</code> 형식으로 구분해달라고 요청해주세요.</div>
+          <textarea id="convert-paste-input" placeholder="AI 결과를 여기에 붙여넣으세요..." style="min-height:120px;"></textarea>
+          <button class="btn btn-dark btn-full" onclick="convertParsePaste()" style="margin-top:8px;">📥 결과 적용하기</button>
+        </div>
+
+        <!-- AI 원본 목록 -->
+        <div id="convert-student-list" style="display:none;margin-top:14px;"></div>
       </div>
     </div>
 
