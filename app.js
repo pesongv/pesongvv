@@ -1,5 +1,5 @@
 // ── 탭 ──
-const TAB_IDS=['t-se','t-ch','t-sports','t-student','t-letter','t-setting'];
+const TAB_IDS=['t-se','t-ch','t-sports','t-student','t-letter','t-convert','t-setting'];
 function showTab(id){
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
@@ -1239,8 +1239,175 @@ function letterExport(){
 }
 
 // ══════════════════════
-// 가이드 모달
+// 통지표용 변환
 // ══════════════════════
+let convertData=[];
+let convertCol='';
+let convertFileName='';
+
+// 개조식 → 서술식 변환 맵
+const ENDING_MAP=[
+  // 길이 순서 중요 (긴 것 먼저)
+  ['이 인상적임','이 인상적입니다'],['이 돋보임','이 돋보입니다'],
+  ['을 보임','을 보입니다'],['를 보임','를 보입니다'],['을 보임','을 보입니다'],
+  ['이 뛰어남','이 뛰어납니다'],['가 뛰어남','가 뛰어납니다'],
+  ['을 탐색함','을 탐색합니다'],['를 탐색함','를 탐색합니다'],
+  ['을 발휘함','을 발휘합니다'],['를 발휘함','를 발휘합니다'],
+  ['을 작성함','을 작성합니다'],['를 작성함','를 작성합니다'],
+  ['을 제시함','을 제시합니다'],['를 제시함','를 제시합니다'],
+  ['을 밝힘','을 밝힙니다'],['를 밝힘','를 밝힙니다'],
+  ['에 참여함','에 참여합니다'],
+  ['이 인상적임','이 인상적입니다'],
+  ['하는 모습을 보임','하는 모습을 보입니다'],
+  ['보임\\.','보입니다.'],['보임$','보입니다'],
+  ['임\\.','입니다.'],['임$','입니다'],
+  ['함\\.','합니다.'],['함$','합니다'],
+  ['됨\\.','됩니다.'],['됨$','됩니다'],
+  ['않음\\.','않습니다.'],['않음$','않습니다'],
+  ['없음\\.','없습니다.'],['없음$','없습니다'],
+  ['있음\\.','있습니다.'],['있음$','있습니다'],
+  ['음\\.','습니다.'],['음$','습니다'],
+];
+
+function convertEnding(text){
+  if(!text||typeof text!=='string')return text;
+  // 문장 단위로 나눠서 각각 변환
+  return text.replace(/([^.]+\.)/g, sentence=>{
+    let s=sentence;
+    for(const [from,to] of ENDING_MAP){
+      const re=new RegExp(from.replace(/\./g,'\\.').replace(/\$/,'')+'(?=\\s|$)','g');
+      s=s.replace(re, to.replace('$',''));
+    }
+    return s;
+  });
+}
+
+function convertLoadCSV(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  convertFileName=file.name;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      // 인코딩 자동 감지 (cp949 시도)
+      const buf=ev.target.result;
+      let text='';
+      try{text=new TextDecoder('euc-kr').decode(buf);}
+      catch{text=new TextDecoder('utf-8').decode(buf);}
+
+      const rows=parseCSV(text);
+      if(rows.length<2)return showToast('데이터가 없어요!','err');
+
+      const headers=rows[0];
+      // 변환할 열 자동 감지
+      const colIdx=headers.findIndex(h=>h.includes('평가결과')||h.includes('교육활동'));
+      if(colIdx===-1)return showToast('평가결과 또는 교육활동 열을 찾을 수 없어요!','err');
+
+      convertCol=headers[colIdx];
+      convertData=rows.slice(1).map(row=>{
+        const obj={};
+        headers.forEach((h,i)=>obj[h]=row[i]||'');
+        return obj;
+      });
+
+      // 변환 실행
+      const converted=convertData.map(row=>({
+        ...row,
+        [convertCol]:convertEnding(row[convertCol])
+      }));
+      convertData=converted;
+
+      // 파일 정보 표시
+      document.getElementById('convert-info').style.display='block';
+      document.getElementById('convert-file-info').textContent=
+        `${convertFileName} · ${convertData.length}명 · "${convertCol}" 열 변환 완료`;
+
+      renderConvertResults();
+      document.getElementById('convert-export-box').style.display='block';
+      showToast(`${convertData.length}명 변환 완료!`);
+    }catch(err){
+      console.error(err);
+      showToast('CSV 파일을 읽을 수 없어요!','err');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value='';
+}
+
+function renderConvertResults(){
+  const container=document.getElementById('convert-results');
+  if(!convertData.length){
+    container.innerHTML='<div class="empty"><div class="empty-icon">🔄</div>CSV 파일을 업로드하면<br>변환 결과가 나타나요.</div>';
+    return;
+  }
+  let html='<div style="display:flex;flex-direction:column;gap:8px;">';
+  convertData.forEach((row,i)=>{
+    const num=row['반/번호']||'';
+    const name=row['성명']||'';
+    const content=row[convertCol]||'';
+    html+=`<div class="result-card">
+      <div class="result-card-hd">
+        <div class="result-sid">${esc(num)} ${esc(name)}</div>
+      </div>
+      <div class="result-text" id="conv_${i}" contenteditable="false">${esc(content)}</div>
+      <div class="result-actions">
+        <button class="btn" style="font-size:12px;padding:5px 10px;" onclick="copyConvertResult('conv_${i}')">복사</button>
+        <button class="btn" style="font-size:12px;padding:5px 10px;" onclick="toggleConvertEdit('conv_${i}',${i})">수정</button>
+      </div>
+    </div>`;
+  });
+  html+='</div>';
+  container.innerHTML=html;
+}
+
+function copyConvertResult(rid){
+  const el=document.getElementById(rid);
+  if(!el)return;
+  navigator.clipboard.writeText(el.innerText).then(()=>showToast('복사됐어요!'));
+}
+
+function toggleConvertEdit(rid,i){
+  const el=document.getElementById(rid);
+  if(!el)return;
+  const isEditing=el.contentEditable==='true';
+  if(isEditing){
+    el.contentEditable='false';
+    convertData[i][convertCol]=el.innerText;
+    el.parentElement.querySelector('button:last-child').textContent='수정';
+    showToast('저장됐어요!');
+  } else {
+    el.contentEditable='true';el.focus();
+    el.parentElement.querySelector('button:last-child').textContent='저장';
+  }
+}
+
+function convertReset(){
+  if(!convertData.length)return showToast('데이터가 없어요!','err');
+  if(!confirm('변환 데이터를 초기화할까요?'))return;
+  convertData=[];convertCol='';convertFileName='';
+  document.getElementById('convert-info').style.display='none';
+  document.getElementById('convert-export-box').style.display='none';
+  renderConvertResults();
+  showToast('초기화됐어요!');
+}
+
+function convertExport(){
+  if(!convertData.length)return showToast('데이터가 없어요!','err');
+  const headers=Object.keys(convertData[0]);
+  let csv=headers.join(',')+'\n';
+  convertData.forEach(row=>{
+    csv+=headers.map(h=>`"${(row[h]||'').replace(/"/g,'""')}"`).join(',')+'\n';
+  });
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='통지표변환_'+convertFileName;
+  a.click();URL.revokeObjectURL(url);
+  showToast('다운로드 시작!');
+}
+
+
 const guideState={};
 
 function openGuide(id){
