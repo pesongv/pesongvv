@@ -1244,13 +1244,51 @@ function letterExport(){
 let convertData=[];
 let convertCol='';
 let convertFileName='';
+let convertMode='auto'; // 'auto' or 'ai'
+
+function selectConvertMode(mode){
+  convertMode=mode;
+  const autoBtn=document.getElementById('mode-auto-btn');
+  const aiBtn=document.getElementById('mode-ai-btn');
+  if(mode==='auto'){
+    autoBtn.style.background='var(--accent)';autoBtn.style.borderColor='var(--accent)';
+    autoBtn.querySelector('div').style.color='#fff';
+    autoBtn.querySelectorAll('div')[1].style.color='rgba(255,255,255,0.8)';
+    aiBtn.style.background='var(--bg)';aiBtn.style.borderColor='var(--border)';
+    aiBtn.querySelector('div').style.color='var(--text)';
+    aiBtn.querySelectorAll('div')[1].style.color='var(--text-3)';
+  } else {
+    aiBtn.style.background='var(--accent)';aiBtn.style.borderColor='var(--accent)';
+    aiBtn.querySelector('div').style.color='#fff';
+    aiBtn.querySelectorAll('div')[1].style.color='rgba(255,255,255,0.8)';
+    autoBtn.style.background='var(--bg)';autoBtn.style.borderColor='var(--border)';
+    autoBtn.querySelector('div').style.color='var(--text)';
+    autoBtn.querySelectorAll('div')[1].style.color='var(--text-3)';
+  }
+  // 파일이 이미 로드된 경우 재처리
+  if(convertData.length)reprocessConvert();
+}
+
+function reprocessConvert(){
+  if(convertMode==='auto'){
+    document.getElementById('convert-ai-panel').style.display='none';
+    document.getElementById('convert-student-list').style.display='none';
+    renderConvertResults();
+    document.getElementById('convert-export-box').style.display='block';
+  } else {
+    document.getElementById('convert-ai-panel').style.display='block';
+    document.getElementById('convert-student-list').style.display='block';
+    renderConvertStudentList();
+    renderConvertBatchBtns();
+    document.getElementById('convert-results').innerHTML='<div class="empty"><div class="empty-icon">🔄</div>AI 텍스트를 복사해<br>결과를 붙여넣으세요.</div>';
+    document.getElementById('convert-export-box').style.display='none';
+  }
+}
 
 // 개조식 → 서술식 변환 (과거형)
 function convertEnding(text){
   if(!text||typeof text!=='string')return text;
-  
   const rules=[
-    // 구체적인 표현 먼저
     ['이 인상적임\\.','이 인상적이었습니다.'],
     ['이 돋보임\\.','이 돋보였습니다.'],
     ['이 뛰어남\\.','이 뛰어났습니다.'],
@@ -1271,7 +1309,6 @@ function convertEnding(text){
     ['에 참여함\\.','에 참여했습니다.'],
     ['을 얻음\\.','을 얻었습니다.'],
     ['를 얻음\\.','를 얻었습니다.'],
-    // 일반 어미
     ['보임\\.','보였습니다.'],
     ['않음\\.','않았습니다.'],
     ['없음\\.','없었습니다.'],
@@ -1281,11 +1318,8 @@ function convertEnding(text){
     ['함\\.','했습니다.'],
     ['음\\.','었습니다.'],
   ];
-
   let result=text;
-  rules.forEach(([pattern,replacement])=>{
-    result=result.replace(new RegExp(pattern,'g'),replacement);
-  });
+  rules.forEach(([p,r])=>{result=result.replace(new RegExp(p,'g'),r);});
   return result;
 }
 
@@ -1296,54 +1330,46 @@ function convertLoadCSV(e){
   const reader=new FileReader();
   reader.onload=ev=>{
     try{
-      // 인코딩 자동 감지 (cp949/euc-kr 우선 시도)
       const buf=ev.target.result;
       let text='';
       try{
         const decoded=new TextDecoder('euc-kr').decode(buf);
-        // 한글이 제대로 디코딩됐는지 확인
-        if(decoded.includes('반/번호')||decoded.includes('성명')||decoded.includes('평가결과')||decoded.includes('교육활동')){
+        if(decoded.includes('반/번호')||decoded.includes('평가결과')||decoded.includes('교육활동')){
           text=decoded;
-        } else {
-          text=new TextDecoder('utf-8').decode(buf);
-        }
-      }catch{
-        text=new TextDecoder('utf-8').decode(buf);
-      }
+        } else {text=new TextDecoder('utf-8').decode(buf);}
+      }catch{text=new TextDecoder('utf-8').decode(buf);}
 
       const rows=parseCSV(text);
       if(rows.length<2)return showToast('데이터가 없어요!','err');
-
       const headers=rows[0].map(h=>h.trim());
-      // 변환할 열 자동 감지 (공백/특수문자 무시)
       const colIdx=headers.findIndex(h=>{
         const clean=h.replace(/\s/g,'');
         return clean.includes('평가결과')||clean.includes('교육활동')||clean.includes('서술평가')||clean.includes('특기사항');
       });
       if(colIdx===-1)return showToast('평가결과 또는 교육활동 열을 찾을 수 없어요!','err');
-
       convertCol=headers[colIdx];
-      convertData=rows.slice(1).map(row=>{
+
+      // 원본 데이터 저장
+      const rawData=rows.slice(1).map(row=>{
         const obj={};
         headers.forEach((h,i)=>obj[h]=row[i]||'');
         return obj;
       });
 
-      // 변환 실행
-      const converted=convertData.map(row=>({
-        ...row,
-        [convertCol]:convertEnding(row[convertCol])
-      }));
-      convertData=converted;
+      // 자동 변환 모드면 즉시 변환
+      if(convertMode==='auto'){
+        convertData=rawData.map(row=>({...row,[convertCol]:convertEnding(row[convertCol])}));
+      } else {
+        // AI 모드면 원본 유지
+        convertData=rawData.map(row=>({...row,_original:row[convertCol],_converted:''}));
+      }
 
-      // 파일 정보 표시
       document.getElementById('convert-info').style.display='block';
       document.getElementById('convert-file-info').textContent=
-        `${convertFileName} · ${convertData.length}명 · "${convertCol}" 열 변환 완료`;
+        `${convertFileName} · ${rawData.length}명 · "${convertCol}" 열`;
 
-      renderConvertResults();
-      document.getElementById('convert-export-box').style.display='block';
-      showToast(`${convertData.length}명 변환 완료!`);
+      reprocessConvert();
+      showToast(`${rawData.length}명 로드 완료!`);
     }catch(err){
       console.error(err);
       showToast('CSV 파일을 읽을 수 없어요!','err');
@@ -1351,6 +1377,109 @@ function convertLoadCSV(e){
   };
   reader.readAsArrayBuffer(file);
   e.target.value='';
+}
+
+// AI 모드: 학생 목록 렌더
+function renderConvertStudentList(){
+  const container=document.getElementById('convert-student-list');
+  if(!convertData.length){container.innerHTML='';return;}
+  let html='<div style="display:flex;flex-direction:column;gap:6px;">';
+  convertData.forEach((row,i)=>{
+    const num=row['반/번호']||'';
+    const name=row['성명']||'';
+    const content=row._original||row[convertCol]||'';
+    html+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-xs);padding:10px 12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:13px;font-weight:700;">${esc(num)} ${esc(name)}</span>
+        <button class="btn" style="font-size:11px;padding:3px 8px;" onclick="copyConvertAiText(${i})">📋 복사</button>
+      </div>
+      <div style="font-size:12px;color:var(--text-3);line-height:1.7;max-height:60px;overflow:hidden;">${esc(content.substring(0,80))}${content.length>80?'...':''}</div>
+    </div>`;
+  });
+  html+='</div>';
+  container.innerHTML=html;
+}
+
+// AI 모드: 복사 버튼 생성
+function renderConvertBatchBtns(){
+  const row=document.getElementById('convert-batch-row');
+  if(!row||!convertData.length)return;
+  row.innerHTML='';
+  // 개별 복사는 학생 목록에 있으니 여기선 묶음만
+  [[1,'개별'],[3,'3명씩'],[5,'5명씩']].forEach(([size,label])=>{
+    if(size===1){
+      // 개별은 이미 각 카드에 있음
+      return;
+    }
+    const total=convertData.length;
+    for(let i=0;i<total;i+=size){
+      const end=Math.min(i+size,total);
+      const btn=document.createElement('button');
+      btn.className='btn btn-dark';
+      btn.style.fontSize='12px';
+      btn.textContent=`📋 ${label} ${i+1}~${end}번`;
+      btn.onclick=()=>copyConvertBatch(i,end);
+      row.appendChild(btn);
+    }
+  });
+}
+
+function getConvertAiText(i){
+  const row=convertData[i];
+  if(!row)return'';
+  const num=row['반/번호']||'';
+  const content=row._original||row[convertCol]||'';
+  return`[통지표 서술 변환 요청]
+학생: ${num}
+
+원본 세특 내용:
+${content}
+
+위 내용을 통지표용으로 변환해주세요.
+
+원칙:
+- 핵심 내용만 자연스럽게 요약
+- 서술어는 반드시 과거형으로 (~했습니다. ~보였습니다. ~이었습니다. 등)
+- 개조식 문장(~임. ~함. ~보임.) 절대 사용 금지
+- 문맥에 맞게 다양한 서술어 사용 (같은 표현 반복 금지)
+- 원본의 핵심 내용과 교육적 의미는 유지
+- 앞에 ###${num} 형식으로 구분해주세요
+
+코드블록 없이 깔끔하게 출력해주세요.`;
+}
+
+function copyConvertAiText(i){
+  navigator.clipboard.writeText(getConvertAiText(i)).then(()=>showToast('복사됐어요!'));
+}
+
+function copyConvertBatch(start,end){
+  const texts=[];
+  for(let i=start;i<end;i++){texts.push(getConvertAiText(i));}
+  navigator.clipboard.writeText(texts.join('\n\n')).then(()=>showToast(`${start+1}~${end}번 복사됐어요!`));
+}
+
+function convertParsePaste(){
+  const raw=document.getElementById('convert-paste-input')?.value||'';
+  if(!raw.trim())return showToast('AI 결과를 붙여넣어 주세요!','err');
+  const parts=raw.split(/###/).filter(p=>p.trim());
+  let matched=0;
+  parts.forEach(part=>{
+    const firstLine=part.split('\n')[0].trim();
+    const content=part.split('\n').slice(1).join('\n').trim();
+    if(!content)return;
+    const idx=convertData.findIndex(row=>{
+      const num=(row['반/번호']||'').trim();
+      return num===firstLine||firstLine.includes(num)||num.includes(firstLine);
+    });
+    if(idx>=0){
+      convertData[idx]={...convertData[idx],[convertCol]:content,_converted:content};
+      matched++;
+    }
+  });
+  document.getElementById('convert-paste-input').value='';
+  renderConvertResults();
+  document.getElementById('convert-export-box').style.display='block';
+  showToast(`${matched}명 적용 완료!`);
 }
 
 function renderConvertResults(){
@@ -1364,10 +1493,15 @@ function renderConvertResults(){
     const num=row['반/번호']||'';
     const name=row['성명']||'';
     const content=row[convertCol]||'';
+    if(!content){
+      html+=`<div class="result-card" style="opacity:0.4;">
+        <div class="result-card-hd"><div class="result-sid">${esc(num)} ${esc(name)}</div></div>
+        <div style="font-size:12px;color:var(--text-3);">미작성</div>
+      </div>`;
+      return;
+    }
     html+=`<div class="result-card">
-      <div class="result-card-hd">
-        <div class="result-sid">${esc(num)} ${esc(name)}</div>
-      </div>
+      <div class="result-card-hd"><div class="result-sid">${esc(num)} ${esc(name)}</div></div>
       <div class="result-text" id="conv_${i}" contenteditable="false">${esc(content)}</div>
       <div class="result-actions">
         <button class="btn" style="font-size:12px;padding:5px 10px;" onclick="copyConvertResult('conv_${i}')">복사</button>
@@ -1406,13 +1540,15 @@ function convertReset(){
   convertData=[];convertCol='';convertFileName='';
   document.getElementById('convert-info').style.display='none';
   document.getElementById('convert-export-box').style.display='none';
+  document.getElementById('convert-ai-panel').style.display='none';
+  document.getElementById('convert-student-list').style.display='none';
   renderConvertResults();
   showToast('초기화됐어요!');
 }
 
 function convertExport(){
   if(!convertData.length)return showToast('데이터가 없어요!','err');
-  const headers=Object.keys(convertData[0]);
+  const headers=Object.keys(convertData[0]).filter(k=>!k.startsWith('_'));
   let csv=headers.join(',')+'\n';
   convertData.forEach(row=>{
     csv+=headers.map(h=>`"${(row[h]||'').replace(/"/g,'""')}"`).join(',')+'\n';
@@ -1425,6 +1561,7 @@ function convertExport(){
   a.click();URL.revokeObjectURL(url);
   showToast('다운로드 시작!');
 }
+
 
 
 const guideState={};
