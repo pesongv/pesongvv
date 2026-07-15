@@ -1289,18 +1289,30 @@ function convertLoadCSV(e){
   const reader=new FileReader();
   reader.onload=ev=>{
     try{
-      // 인코딩 자동 감지 (cp949 시도)
+      // 인코딩 자동 감지 (cp949/euc-kr 우선 시도)
       const buf=ev.target.result;
       let text='';
-      try{text=new TextDecoder('euc-kr').decode(buf);}
-      catch{text=new TextDecoder('utf-8').decode(buf);}
+      try{
+        const decoded=new TextDecoder('euc-kr').decode(buf);
+        // 한글이 제대로 디코딩됐는지 확인
+        if(decoded.includes('반/번호')||decoded.includes('성명')||decoded.includes('평가결과')||decoded.includes('교육활동')){
+          text=decoded;
+        } else {
+          text=new TextDecoder('utf-8').decode(buf);
+        }
+      }catch{
+        text=new TextDecoder('utf-8').decode(buf);
+      }
 
       const rows=parseCSV(text);
       if(rows.length<2)return showToast('데이터가 없어요!','err');
 
-      const headers=rows[0];
-      // 변환할 열 자동 감지
-      const colIdx=headers.findIndex(h=>h.includes('평가결과')||h.includes('교육활동'));
+      const headers=rows[0].map(h=>h.trim());
+      // 변환할 열 자동 감지 (공백/특수문자 무시)
+      const colIdx=headers.findIndex(h=>{
+        const clean=h.replace(/\s/g,'');
+        return clean.includes('평가결과')||clean.includes('교육활동')||clean.includes('서술평가')||clean.includes('특기사항');
+      });
       if(colIdx===-1)return showToast('평가결과 또는 교육활동 열을 찾을 수 없어요!','err');
 
       convertCol=headers[colIdx];
