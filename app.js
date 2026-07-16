@@ -834,18 +834,20 @@ function loadClasses(){
   const cls=S.get('classes',[]);
   if(!cls.length){addClass('1반');return;}
   const sorted=[...cls].sort((a,b)=>(parseInt(a.name)||999)-(parseInt(b.name)||999));
+  const tabBar=document.getElementById('classTabBar');
+  const panelsEl=document.getElementById('classPanels');
+  const tabFrag=document.createDocumentFragment();
+  const panelFrag=document.createDocumentFragment();
   sorted.forEach(c=>{
     classCount++;
     const id=c.cid||'cls_'+classCount;
     if(document.getElementById('ctab_'+id))return;
-    const tabBar=document.getElementById('classTabBar');
     const btn=document.createElement('button');
-    btn.className='class-tab-btn'; btn.id='ctab_'+id;
-    btn.textContent=c.name; btn.onclick=()=>switchClass(id);
-    tabBar.appendChild(btn);
-    const panelsEl=document.getElementById('classPanels');
+    btn.className='class-tab-btn';btn.id='ctab_'+id;
+    btn.textContent=c.name;btn.onclick=()=>switchClass(id);
+    tabFrag.appendChild(btn);
     const panel=document.createElement('div');
-    panel.className='class-panel'; panel.id='cpanel_'+id;
+    panel.className='class-panel';panel.id='cpanel_'+id;
     panel.innerHTML=`
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
         <input class="class-name-input" id="cname_${id}" value="${esc(c.name)}" onchange="updateClassName('${id}')">
@@ -853,9 +855,19 @@ function loadClasses(){
       </div>
       <div class="student-list" id="srows_${id}"></div>
       <button class="add-student-btn" onclick="addStudent('${id}')">+ 학생 추가</button>`;
-    panelsEl.appendChild(panel);
-    c.students.forEach((s,i)=>{sCount++;const sid='s_'+sCount;const rows=document.getElementById('srows_'+id);rows.insertAdjacentHTML('beforeend',makeStudentRow(sid,id,i+1,s.id,s.gender||'남학생'));});
+    const rowFrag=document.createDocumentFragment();
+    c.students.forEach((s,i)=>{
+      sCount++;
+      const sid='s_'+sCount;
+      const div=document.createElement('div');
+      div.innerHTML=makeStudentRow(sid,id,i+1,s.id,s.gender||'남학생');
+      rowFrag.appendChild(div.firstChild);
+    });
+    panel.querySelector('.student-list').appendChild(rowFrag);
+    panelFrag.appendChild(panel);
   });
+  tabBar.appendChild(tabFrag);
+  panelsEl.appendChild(panelFrag);
   document.querySelector('.class-tab-btn')?.click();
 }
 
@@ -1312,7 +1324,7 @@ function renderConvertPanel(id){
   <div class="split-layout" style="margin-top:14px;">
     <div class="split-left"><div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <span style="font-size:15px;font-weight:700;">${esc(cls.name)}</span>
+        <input class="class-name-input" id="cvtname_${id}" value="${esc(cls.name)}" onchange="updateConvertClassName('${id}')">
         <button class="btn btn-danger" style="font-size:11px;padding:4px 9px;" onclick="convertDeleteClass('${id}')">반 삭제</button>
       </div>
       <div style="border:1.5px dashed var(--border-strong);border-radius:var(--radius-sm);padding:16px;text-align:center;cursor:pointer;margin-bottom:12px;" onclick="document.getElementById('${fileId}').click()">
@@ -1348,6 +1360,18 @@ function renderConvertPanel(id){
     renderConvertResultsFor(id);
     if(convertMode==='ai'){renderConvertStudentListFor(id);renderConvertBatchBtnsFor(id);}
   }
+}
+
+function updateConvertClassName(id){
+  const name=document.getElementById('cvtname_'+id)?.value.trim()||'반';
+  convertClasses[id].name=name;
+  const tab=document.getElementById('cvttab_'+id);
+  if(tab)tab.textContent=name;
+  // 번호순 재정렬
+  const tabBar=document.getElementById('convertTabBar');
+  const tabs=Array.from(tabBar.querySelectorAll('.class-tab-btn'));
+  tabs.sort((a,b)=>(parseInt(a.textContent)||999)-(parseInt(b.textContent)||999));
+  tabs.forEach(t=>tabBar.appendChild(t));
 }
 
 function convertDeleteClass(id){
