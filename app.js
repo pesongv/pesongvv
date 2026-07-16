@@ -1275,6 +1275,10 @@ function convertAddClass(name){
   btn.className='class-tab-btn';btn.id='cvttab_'+id;
   btn.textContent=cn;btn.onclick=()=>switchConvertClass(id);
   tabBar.appendChild(btn);
+  // 번호순 정렬
+  const tabs=Array.from(tabBar.querySelectorAll('.class-tab-btn'));
+  tabs.sort((a,b)=>(parseInt(a.textContent)||999)-(parseInt(b.textContent)||999));
+  tabs.forEach(t=>tabBar.appendChild(t));
   switchConvertClass(id);
   return id;
 }
