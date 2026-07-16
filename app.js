@@ -1484,7 +1484,12 @@ function convertParsePasteFor(id){
   parts.forEach(part=>{
     const firstLine=part.split('\n')[0].trim();const content=part.split('\n').slice(1).join('\n').trim();
     if(!content)return;
-    const idx=cls.data.findIndex(row=>{const num=(row['반/번호']||'').trim();return num===firstLine||firstLine.includes(num)||num.includes(firstLine);});
+    const idx=cls.data.findIndex(row=>{
+      const num=(row['반/번호']||'').trim();
+      const cleanNum=num.replace(/[-\/]/g,'');
+      const cleanFirst=firstLine.replace(/[-\/]/g,'');
+      return num===firstLine||firstLine.includes(num)||num.includes(firstLine)||cleanNum===cleanFirst;
+    });
     if(idx>=0){cls.data[idx][cls.col]=content;matched++;}
   });
   document.getElementById('cvt-paste-'+id).value='';
