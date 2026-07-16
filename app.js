@@ -1238,13 +1238,14 @@ function letterExport(){
   showToast('다운로드 시작!');
 }
 
+
 // ══════════════════════
-// 통지표용 변환
+// 통지표용 변환 (반별 탭)
 // ══════════════════════
-let convertData=[];
-let convertCol='';
-let convertFileName='';
-let convertMode='auto'; // 'auto' or 'ai'
+let convertMode='auto';
+let convertClassCount=0;
+let activeConvertId=null;
+const convertClasses={};
 
 function selectConvertMode(mode){
   convertMode=mode;
@@ -1252,184 +1253,195 @@ function selectConvertMode(mode){
   const aiBtn=document.getElementById('mode-ai-btn');
   if(mode==='auto'){
     autoBtn.style.background='var(--accent)';autoBtn.style.borderColor='var(--accent)';
-    autoBtn.querySelector('div').style.color='#fff';
-    autoBtn.querySelectorAll('div')[1].style.color='rgba(255,255,255,0.8)';
+    autoBtn.querySelector('div').style.color='#fff';autoBtn.querySelectorAll('div')[1].style.color='rgba(255,255,255,0.8)';
     aiBtn.style.background='var(--bg)';aiBtn.style.borderColor='var(--border)';
-    aiBtn.querySelector('div').style.color='var(--text)';
-    aiBtn.querySelectorAll('div')[1].style.color='var(--text-3)';
+    aiBtn.querySelector('div').style.color='var(--text)';aiBtn.querySelectorAll('div')[1].style.color='var(--text-3)';
   } else {
     aiBtn.style.background='var(--accent)';aiBtn.style.borderColor='var(--accent)';
-    aiBtn.querySelector('div').style.color='#fff';
-    aiBtn.querySelectorAll('div')[1].style.color='rgba(255,255,255,0.8)';
+    aiBtn.querySelector('div').style.color='#fff';aiBtn.querySelectorAll('div')[1].style.color='rgba(255,255,255,0.8)';
     autoBtn.style.background='var(--bg)';autoBtn.style.borderColor='var(--border)';
-    autoBtn.querySelector('div').style.color='var(--text)';
-    autoBtn.querySelectorAll('div')[1].style.color='var(--text-3)';
+    autoBtn.querySelector('div').style.color='var(--text)';autoBtn.querySelectorAll('div')[1].style.color='var(--text-3)';
   }
-  // 파일이 이미 로드된 경우 재처리
-  if(convertData.length)reprocessConvert();
+  if(activeConvertId)renderConvertPanel(activeConvertId);
 }
 
-function reprocessConvert(){
-  if(convertMode==='auto'){
-    document.getElementById('convert-ai-panel').style.display='none';
-    document.getElementById('convert-student-list').style.display='none';
-    renderConvertResults();
-    document.getElementById('convert-export-box').style.display='block';
-  } else {
-    document.getElementById('convert-ai-panel').style.display='block';
-    document.getElementById('convert-student-list').style.display='block';
-    renderConvertStudentList();
-    renderConvertBatchBtns();
-    document.getElementById('convert-results').innerHTML='<div class="empty"><div class="empty-icon">🔄</div>AI 텍스트를 복사해<br>결과를 붙여넣으세요.</div>';
-    document.getElementById('convert-export-box').style.display='none';
+function convertAddClass(name){
+  convertClassCount++;
+  const id='cvt_'+convertClassCount;
+  const cn=name||(convertClassCount+'반');
+  convertClasses[id]={name:cn,data:[],col:'',fileName:''};
+  const tabBar=document.getElementById('convertTabBar');
+  const btn=document.createElement('button');
+  btn.className='class-tab-btn';btn.id='cvttab_'+id;
+  btn.textContent=cn;btn.onclick=()=>switchConvertClass(id);
+  tabBar.appendChild(btn);
+  switchConvertClass(id);
+  return id;
+}
+
+function switchConvertClass(id){
+  activeConvertId=id;
+  document.querySelectorAll('#convertTabBar .class-tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('cvttab_'+id)?.classList.add('active');
+  renderConvertPanel(id);
+}
+
+function convertImportClasses(){
+  const cls=S.get('classes',[]);
+  if(!cls.length)return showToast('학생관리에서 먼저 반을 등록해주세요!','err');
+  let added=0;
+  cls.forEach(c=>{
+    const exists=Object.values(convertClasses).some(cv=>cv.name===c.name);
+    if(!exists){convertAddClass(c.name);added++;}
+  });
+  if(added===0)return showToast('이미 모든 반이 추가되어 있어요!','err');
+  showToast(`${added}개 반 추가됐어요!`);
+}
+
+function renderConvertPanel(id){
+  const cls=convertClasses[id];
+  if(!cls)return;
+  const panelsEl=document.getElementById('convertPanels');
+  const fileId='cvtfile_'+id;
+  const hasData=cls.data.length>0;
+  panelsEl.innerHTML=`
+  <div class="split-layout" style="margin-top:14px;">
+    <div class="split-left"><div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <span style="font-size:15px;font-weight:700;">${esc(cls.name)}</span>
+        <button class="btn btn-danger" style="font-size:11px;padding:4px 9px;" onclick="convertDeleteClass('${id}')">반 삭제</button>
+      </div>
+      <div style="border:1.5px dashed var(--border-strong);border-radius:var(--radius-sm);padding:16px;text-align:center;cursor:pointer;margin-bottom:12px;" onclick="document.getElementById('${fileId}').click()">
+        <div style="font-size:24px;margin-bottom:6px;">📂</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;">${hasData?cls.fileName+' (재업로드)':'CSV 파일 업로드'}</div>
+        <div style="font-size:11px;color:var(--text-3);">과목별 서술평가 관리 또는 자유학기 활동영역별 특기사항</div>
+        <input type="file" id="${fileId}" accept=".csv" style="display:none;" onchange="convertLoadCSVForClass(event,'${id}')">
+      </div>
+      ${hasData?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-xs);padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--text-2);"><b>${cls.data.length}명</b> · "${cls.col}" 열 · ${cls.fileName}</div>`:''}
+      ${convertMode==='ai'&&hasData?`
+      <div class="divider"></div>
+      <label style="margin-bottom:8px;display:block;">AI용 텍스트 복사</label>
+      <div class="btn-row" style="margin-bottom:6px;" id="cvt-batch-row-${id}"></div>
+      <div style="font-size:11px;color:var(--text-3);margin-bottom:12px;">💡 무료 AI는 3명씩, 유료는 5명씩!</div>
+      <div class="divider"></div>
+      <label style="margin-bottom:6px;display:block;">AI 결과 붙여넣기</label>
+      <div style="font-size:12px;color:var(--text-3);margin-bottom:6px;">각 결과 앞에 <code style="background:var(--bg);border:1px solid var(--border);padding:1px 4px;border-radius:3px;">###반/번호</code> 형식으로 구분해달라고 요청해주세요.</div>
+      <textarea id="cvt-paste-${id}" placeholder="AI 결과를 여기에 붙여넣으세요..." style="min-height:100px;"></textarea>
+      <button class="btn btn-dark btn-full" onclick="convertParsePasteFor('${id}')" style="margin-top:8px;">📥 결과 적용하기</button>
+      <div id="cvt-student-list-${id}" style="margin-top:12px;"></div>
+      `:''}
+    </div></div>
+    <div class="split-right"><div class="split-right-sticky"><div class="card">
+      <div class="result-header-bar">
+        <div class="result-title">🔄 변환 결과</div>
+        <button class="btn btn-danger" style="font-size:11px;padding:4px 9px;" onclick="convertResetFor('${id}')">초기화</button>
+      </div>
+      <div id="cvt-results-${id}"><div class="empty"><div class="empty-icon">🔄</div>CSV 파일을 업로드하면<br>변환 결과가 나타나요.</div></div>
+      ${hasData?`<div style="margin-top:12px;"><div class="export-box"><div class="export-title">📥 변환 파일 다운로드</div><button class="btn btn-green btn-full" onclick="convertExportFor('${id}')">📥 CSV 다운로드</button></div></div>`:''}
+    </div></div></div>
+  </div>`;
+  if(hasData){
+    renderConvertResultsFor(id);
+    if(convertMode==='ai'){renderConvertStudentListFor(id);renderConvertBatchBtnsFor(id);}
   }
 }
 
-// 개조식 → 서술식 변환 (과거형)
-function convertEnding(text){
-  if(!text||typeof text!=='string')return text;
-  const rules=[
-    ['이 인상적임\\.','이 인상적이었습니다.'],
-    ['이 돋보임\\.','이 돋보였습니다.'],
-    ['이 뛰어남\\.','이 뛰어났습니다.'],
-    ['가 뛰어남\\.','가 뛰어났습니다.'],
-    ['하는 모습을 보임\\.','하는 모습을 보였습니다.'],
-    ['을 보임\\.','을 보였습니다.'],
-    ['를 보임\\.','를 보였습니다.'],
-    ['을 탐색함\\.','을 탐색했습니다.'],
-    ['를 탐색함\\.','를 탐색했습니다.'],
-    ['을 발휘함\\.','을 발휘했습니다.'],
-    ['를 발휘함\\.','를 발휘했습니다.'],
-    ['을 작성함\\.','을 작성했습니다.'],
-    ['를 작성함\\.','를 작성했습니다.'],
-    ['을 제시함\\.','을 제시했습니다.'],
-    ['를 제시함\\.','를 제시했습니다.'],
-    ['을 밝힘\\.','을 밝혔습니다.'],
-    ['를 밝힘\\.','를 밝혔습니다.'],
-    ['에 참여함\\.','에 참여했습니다.'],
-    ['을 얻음\\.','을 얻었습니다.'],
-    ['를 얻음\\.','를 얻었습니다.'],
-    ['보임\\.','보였습니다.'],
-    ['않음\\.','않았습니다.'],
-    ['없음\\.','없었습니다.'],
-    ['있음\\.','있었습니다.'],
-    ['됨\\.','되었습니다.'],
-    ['임\\.','이었습니다.'],
-    ['함\\.','했습니다.'],
-    ['음\\.','었습니다.'],
-  ];
-  let result=text;
-  rules.forEach(([p,r])=>{result=result.replace(new RegExp(p,'g'),r);});
-  return result;
+function convertDeleteClass(id){
+  if(!confirm('이 반을 삭제할까요?'))return;
+  delete convertClasses[id];
+  document.getElementById('cvttab_'+id)?.remove();
+  document.getElementById('convertPanels').innerHTML='';
+  activeConvertId=null;
+  const first=Object.keys(convertClasses)[0];
+  if(first)switchConvertClass(first);
+  showToast('반이 삭제됐어요!');
 }
 
-function convertLoadCSV(e){
+function convertLoadCSVForClass(e,id){
   const file=e.target.files[0];
   if(!file)return;
-  convertFileName=file.name;
   const reader=new FileReader();
   reader.onload=ev=>{
     try{
       const buf=ev.target.result;
       let text='';
-      try{
-        const decoded=new TextDecoder('euc-kr').decode(buf);
-        if(decoded.includes('반/번호')||decoded.includes('평가결과')||decoded.includes('교육활동')){
-          text=decoded;
-        } else {text=new TextDecoder('utf-8').decode(buf);}
-      }catch{text=new TextDecoder('utf-8').decode(buf);}
-
+      try{const decoded=new TextDecoder('euc-kr').decode(buf);if(decoded.includes('반/번호')||decoded.includes('평가결과')||decoded.includes('교육활동')){text=decoded;}else{text=new TextDecoder('utf-8').decode(buf);}}catch{text=new TextDecoder('utf-8').decode(buf);}
       const rows=parseCSV(text);
       if(rows.length<2)return showToast('데이터가 없어요!','err');
       const headers=rows[0].map(h=>h.trim());
-      const colIdx=headers.findIndex(h=>{
-        const clean=h.replace(/\s/g,'');
-        return clean.includes('평가결과')||clean.includes('교육활동')||clean.includes('서술평가')||clean.includes('특기사항');
-      });
+      const colIdx=headers.findIndex(h=>{const c=h.replace(/\s/g,'');return c.includes('평가결과')||c.includes('교육활동')||c.includes('서술평가')||c.includes('특기사항');});
       if(colIdx===-1)return showToast('평가결과 또는 교육활동 열을 찾을 수 없어요!','err');
-      convertCol=headers[colIdx];
-
-      // 원본 데이터 저장
-      const rawData=rows.slice(1).map(row=>{
-        const obj={};
-        headers.forEach((h,i)=>obj[h]=row[i]||'');
-        return obj;
-      });
-
-      // 자동 변환 모드면 즉시 변환
-      if(convertMode==='auto'){
-        convertData=rawData.map(row=>({...row,[convertCol]:convertEnding(row[convertCol])}));
-      } else {
-        // AI 모드면 원본 유지
-        convertData=rawData.map(row=>({...row,_original:row[convertCol],_converted:''}));
-      }
-
-      document.getElementById('convert-info').style.display='block';
-      document.getElementById('convert-file-info').textContent=
-        `${convertFileName} · ${rawData.length}명 · "${convertCol}" 열`;
-
-      reprocessConvert();
+      const col=headers[colIdx];
+      const rawData=rows.slice(1).map(row=>{const obj={};headers.forEach((h,i)=>obj[h]=row[i]||'');return obj;});
+      if(convertMode==='auto'){convertClasses[id].data=rawData.map(row=>({...row,[col]:convertEnding(row[col])}));}
+      else{convertClasses[id].data=rawData.map(row=>({...row,_original:row[col],_converted:''}));}
+      convertClasses[id].col=col;convertClasses[id].fileName=file.name;
       showToast(`${rawData.length}명 로드 완료!`);
-    }catch(err){
-      console.error(err);
-      showToast('CSV 파일을 읽을 수 없어요!','err');
-    }
+      renderConvertPanel(id);
+    }catch(err){console.error(err);showToast('CSV 파일을 읽을 수 없어요!','err');}
   };
   reader.readAsArrayBuffer(file);
   e.target.value='';
 }
 
-// AI 모드: 학생 목록 렌더
-function renderConvertStudentList(){
-  const container=document.getElementById('convert-student-list');
-  if(!convertData.length){container.innerHTML='';return;}
-  let html='<div style="display:flex;flex-direction:column;gap:6px;">';
-  convertData.forEach((row,i)=>{
-    const num=row['반/번호']||'';
-    const name=row['성명']||'';
-    const content=row._original||row[convertCol]||'';
-    html+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-xs);padding:10px 12px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <span style="font-size:13px;font-weight:700;">${esc(num)} ${esc(name)}</span>
-        <button class="btn" style="font-size:11px;padding:3px 8px;" onclick="copyConvertAiText(${i})">📋 복사</button>
-      </div>
-      <div style="font-size:12px;color:var(--text-3);line-height:1.7;max-height:60px;overflow:hidden;">${esc(content.substring(0,80))}${content.length>80?'...':''}</div>
-    </div>`;
+function renderConvertResultsFor(id){
+  const cls=convertClasses[id];
+  const container=document.getElementById('cvt-results-'+id);
+  if(!container||!cls)return;
+  if(!cls.data.length){container.innerHTML='<div class="empty"><div class="empty-icon">🔄</div>CSV를 업로드하면 결과가 나타나요.</div>';return;}
+  let html='<div style="display:flex;flex-direction:column;gap:8px;">';
+  cls.data.forEach((row,i)=>{
+    const num=row['반/번호']||'';const name=row['성명']||'';const content=row[cls.col]||'';
+    if(!content){html+=`<div class="result-card" style="opacity:0.4;"><div class="result-card-hd"><div class="result-sid">${esc(num)} ${esc(name)}</div></div><div style="font-size:12px;color:var(--text-3);">미작성</div></div>`;return;}
+    html+=`<div class="result-card">
+      <div class="result-card-hd"><div class="result-sid">${esc(num)} ${esc(name)}</div></div>
+      <div class="result-text" id="cvt_${id}_${i}" contenteditable="false">${esc(content)}</div>
+      <div class="result-actions">
+        <button class="btn" style="font-size:12px;padding:5px 10px;" onclick="copyConvertResult('cvt_${id}_${i}')">복사</button>
+        <button class="btn" style="font-size:12px;padding:5px 10px;" onclick="toggleConvertEditFor('cvt_${id}_${i}','${id}',${i})">수정</button>
+      </div></div>`;
   });
-  html+='</div>';
-  container.innerHTML=html;
+  html+='</div>';container.innerHTML=html;
 }
 
-// AI 모드: 복사 버튼 생성
-function renderConvertBatchBtns(){
-  const row=document.getElementById('convert-batch-row');
-  if(!row||!convertData.length)return;
-  row.innerHTML='';
-  // 개별 복사는 학생 목록에 있으니 여기선 묶음만
-  [[1,'개별'],[3,'3명씩'],[5,'5명씩']].forEach(([size,label])=>{
-    if(size===1){
-      // 개별은 이미 각 카드에 있음
-      return;
-    }
-    const total=convertData.length;
+function renderConvertStudentListFor(id){
+  const cls=convertClasses[id];const container=document.getElementById('cvt-student-list-'+id);
+  if(!container||!cls)return;
+  let html='<div style="display:flex;flex-direction:column;gap:6px;">';
+  cls.data.forEach((row,i)=>{
+    const num=row['반/번호']||'';const name=row['성명']||'';const content=row._original||row[cls.col]||'';
+    html+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-xs);padding:8px 12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <span style="font-size:12px;font-weight:700;">${esc(num)} ${esc(name)}</span>
+        <button class="btn" style="font-size:11px;padding:3px 7px;" onclick="copyConvertAiTextFor('${id}',${i})">📋 복사</button>
+      </div>
+      <div style="font-size:11px;color:var(--text-3);line-height:1.6;">${esc(content.substring(0,60))}${content.length>60?'...':''}</div>
+    </div>`;
+  });
+  html+='</div>';container.innerHTML=html;
+}
+
+function renderConvertBatchBtnsFor(id){
+  const cls=convertClasses[id];const row=document.getElementById('cvt-batch-row-'+id);
+  if(!row||!cls)return;row.innerHTML='';
+  const total=cls.data.length;
+  [[3,'3명씩'],[5,'5명씩']].forEach(([size,label])=>{
     for(let i=0;i<total;i+=size){
       const end=Math.min(i+size,total);
       const btn=document.createElement('button');
-      btn.className='btn btn-dark';
-      btn.style.fontSize='12px';
+      btn.className='btn btn-dark';btn.style.fontSize='12px';
       btn.textContent=`📋 ${label} ${i+1}~${end}번`;
-      btn.onclick=()=>copyConvertBatch(i,end);
+      btn.onclick=()=>copyConvertBatchFor(id,i,end);
       row.appendChild(btn);
     }
   });
 }
 
-function getConvertAiText(i){
-  const row=convertData[i];
-  if(!row)return'';
-  const num=row['반/번호']||'';
-  const content=row._original||row[convertCol]||'';
-  return`[통지표 서술 변환 요청]
+function getConvertAiTextFor(id,i){
+  const cls=convertClasses[id];if(!cls)return'';
+  const row=cls.data[i];if(!row)return'';
+  const num=row['반/번호']||'';const content=row._original||row[cls.col]||'';
+  return `[통지표 서술 변환 요청]
 학생: ${num}
 
 원본 세특 내용:
@@ -1456,122 +1468,77 @@ ${content}
 코드블록 없이 깔끔하게 출력해주세요.`;
 }
 
-function copyConvertAiText(i){
-  navigator.clipboard.writeText(getConvertAiText(i)).then(()=>showToast('복사됐어요!'));
-}
+function copyConvertAiTextFor(id,i){navigator.clipboard.writeText(getConvertAiTextFor(id,i)).then(()=>showToast('복사됐어요!'));}
+function copyConvertBatchFor(id,start,end){const texts=[];for(let i=start;i<end;i++){texts.push(getConvertAiTextFor(id,i));}navigator.clipboard.writeText(texts.join('\n\n')).then(()=>showToast(`${start+1}~${end}번 복사됐어요!`));}
 
-function copyConvertBatch(start,end){
-  const texts=[];
-  for(let i=start;i<end;i++){texts.push(getConvertAiText(i));}
-  navigator.clipboard.writeText(texts.join('\n\n')).then(()=>showToast(`${start+1}~${end}번 복사됐어요!`));
-}
-
-function convertParsePaste(){
-  const raw=document.getElementById('convert-paste-input')?.value||'';
+function convertParsePasteFor(id){
+  const cls=convertClasses[id];
+  const raw=document.getElementById('cvt-paste-'+id)?.value||'';
   if(!raw.trim())return showToast('AI 결과를 붙여넣어 주세요!','err');
   const parts=raw.split(/###/).filter(p=>p.trim());
   let matched=0;
   parts.forEach(part=>{
-    const firstLine=part.split('\n')[0].trim();
-    const content=part.split('\n').slice(1).join('\n').trim();
+    const firstLine=part.split('\n')[0].trim();const content=part.split('\n').slice(1).join('\n').trim();
     if(!content)return;
-    const idx=convertData.findIndex(row=>{
-      const num=(row['반/번호']||'').trim();
-      return num===firstLine||firstLine.includes(num)||num.includes(firstLine);
-    });
-    if(idx>=0){
-      convertData[idx]={...convertData[idx],[convertCol]:content,_converted:content};
-      matched++;
-    }
+    const idx=cls.data.findIndex(row=>{const num=(row['반/번호']||'').trim();return num===firstLine||firstLine.includes(num)||num.includes(firstLine);});
+    if(idx>=0){cls.data[idx][cls.col]=content;matched++;}
   });
-  document.getElementById('convert-paste-input').value='';
-  renderConvertResults();
-  document.getElementById('convert-export-box').style.display='block';
+  document.getElementById('cvt-paste-'+id).value='';
+  renderConvertPanel(id);
   showToast(`${matched}명 적용 완료!`);
 }
 
-function renderConvertResults(){
-  const container=document.getElementById('convert-results');
-  if(!convertData.length){
-    container.innerHTML='<div class="empty"><div class="empty-icon">🔄</div>CSV 파일을 업로드하면<br>변환 결과가 나타나요.</div>';
-    return;
-  }
-  let html='<div style="display:flex;flex-direction:column;gap:8px;">';
-  convertData.forEach((row,i)=>{
-    const num=row['반/번호']||'';
-    const name=row['성명']||'';
-    const content=row[convertCol]||'';
-    if(!content){
-      html+=`<div class="result-card" style="opacity:0.4;">
-        <div class="result-card-hd"><div class="result-sid">${esc(num)} ${esc(name)}</div></div>
-        <div style="font-size:12px;color:var(--text-3);">미작성</div>
-      </div>`;
-      return;
-    }
-    html+=`<div class="result-card">
-      <div class="result-card-hd"><div class="result-sid">${esc(num)} ${esc(name)}</div></div>
-      <div class="result-text" id="conv_${i}" contenteditable="false">${esc(content)}</div>
-      <div class="result-actions">
-        <button class="btn" style="font-size:12px;padding:5px 10px;" onclick="copyConvertResult('conv_${i}')">복사</button>
-        <button class="btn" style="font-size:12px;padding:5px 10px;" onclick="toggleConvertEdit('conv_${i}',${i})">수정</button>
-      </div>
-    </div>`;
-  });
-  html+='</div>';
-  container.innerHTML=html;
-}
-
-function copyConvertResult(rid){
-  const el=document.getElementById(rid);
-  if(!el)return;
-  navigator.clipboard.writeText(el.innerText).then(()=>showToast('복사됐어요!'));
-}
-
-function toggleConvertEdit(rid,i){
-  const el=document.getElementById(rid);
-  if(!el)return;
+function toggleConvertEditFor(rid,id,i){
+  const el=document.getElementById(rid);if(!el)return;
   const isEditing=el.contentEditable==='true';
-  if(isEditing){
-    el.contentEditable='false';
-    convertData[i][convertCol]=el.innerText;
-    el.parentElement.querySelector('button:last-child').textContent='수정';
-    showToast('저장됐어요!');
-  } else {
-    el.contentEditable='true';el.focus();
-    el.parentElement.querySelector('button:last-child').textContent='저장';
-  }
+  if(isEditing){el.contentEditable='false';convertClasses[id].data[i][convertClasses[id].col]=el.innerText;el.parentElement.querySelector('button:last-child').textContent='수정';showToast('저장됐어요!');}
+  else{el.contentEditable='true';el.focus();el.parentElement.querySelector('button:last-child').textContent='저장';}
 }
 
-function convertReset(){
-  if(!convertData.length)return showToast('데이터가 없어요!','err');
-  if(!confirm('변환 데이터를 초기화할까요?'))return;
-  convertData=[];convertCol='';convertFileName='';
-  document.getElementById('convert-info').style.display='none';
-  document.getElementById('convert-export-box').style.display='none';
-  document.getElementById('convert-ai-panel').style.display='none';
-  document.getElementById('convert-student-list').style.display='none';
-  renderConvertResults();
-  showToast('초기화됐어요!');
+function convertResetFor(id){
+  if(!confirm('이 반의 변환 데이터를 초기화할까요?'))return;
+  convertClasses[id].data=[];convertClasses[id].col='';convertClasses[id].fileName='';
+  renderConvertPanel(id);showToast('초기화됐어요!');
 }
 
-function convertExport(){
-  if(!convertData.length)return showToast('데이터가 없어요!','err');
-  const headers=Object.keys(convertData[0]).filter(k=>!k.startsWith('_'));
+function convertExportFor(id){
+  const cls=convertClasses[id];
+  if(!cls||!cls.data.length)return showToast('데이터가 없어요!','err');
+  const headers=Object.keys(cls.data[0]).filter(k=>!k.startsWith('_'));
   let csv=headers.join(',')+'\n';
-  convertData.forEach(row=>{
-    csv+=headers.map(h=>`"${(row[h]||'').replace(/"/g,'""')}"`).join(',')+'\n';
-  });
+  cls.data.forEach(row=>{csv+=headers.map(h=>`"${(row[h]||'').replace(/"/g,'""')}"`).join(',')+'\n';});
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
-  a.href=url;
-  a.download='통지표변환_'+convertFileName;
-  a.click();URL.revokeObjectURL(url);
-  showToast('다운로드 시작!');
+  a.href=url;a.download='통지표변환_'+cls.name+'_'+cls.fileName;
+  a.click();URL.revokeObjectURL(url);showToast('다운로드 시작!');
 }
 
+// 개조식 → 서술식 변환 (과거형)
+function convertEnding(text){
+  if(!text||typeof text!=='string')return text;
+  const rules=[
+    ['이 인상적임\\.','이 인상적이었습니다.'],['이 돋보임\\.','이 돋보였습니다.'],
+    ['이 뛰어남\\.','이 뛰어났습니다.'],['가 뛰어남\\.','가 뛰어났습니다.'],
+    ['하는 모습을 보임\\.','하는 모습을 보였습니다.'],
+    ['을 보임\\.','을 보였습니다.'],['를 보임\\.','를 보였습니다.'],
+    ['을 탐색함\\.','을 탐색했습니다.'],['를 탐색함\\.','를 탐색했습니다.'],
+    ['을 발휘함\\.','을 발휘했습니다.'],['를 발휘함\\.','를 발휘했습니다.'],
+    ['을 작성함\\.','을 작성했습니다.'],['를 작성함\\.','를 작성했습니다.'],
+    ['을 제시함\\.','을 제시했습니다.'],['를 제시함\\.','를 제시했습니다.'],
+    ['을 밝힘\\.','을 밝혔습니다.'],['를 밝힘\\.','를 밝혔습니다.'],
+    ['에 참여함\\.','에 참여했습니다.'],['을 얻음\\.','을 얻었습니다.'],['를 얻음\\.','를 얻었습니다.'],
+    ['보임\\.','보였습니다.'],['않음\\.','않았습니다.'],['없음\\.','없었습니다.'],
+    ['있음\\.','있었습니다.'],['됨\\.','되었습니다.'],['임\\.','이었습니다.'],
+    ['함\\.','했습니다.'],['음\\.','었습니다.'],
+  ];
+  let result=text;
+  rules.forEach(([p,r])=>{result=result.replace(new RegExp(p,'g'),r);});
+  return result;
+}
 
-
+// 호환성 유지용
+function copyConvertResult(rid){const el=document.getElementById(rid);if(!el)return;navigator.clipboard.writeText(el.innerText).then(()=>showToast('복사됐어요!'));}
 const guideState={};
 
 function openGuide(id){
@@ -1594,7 +1561,7 @@ function renderSlide(id){
 }
 function nextSlide(id){const slides=document.querySelectorAll(`#slides-${id} .modal-slide`);if(guideState[id]===slides.length-1){closeGuide(id);return;}guideState[id]=(guideState[id]||0)+1;renderSlide(id);}
 function prevSlide(id){if((guideState[id]||0)===0)return;guideState[id]--;renderSlide(id);}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){['se','ch','sports','student','letter'].forEach(id=>closeGuide(id));}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){['se','ch','sports','student','letter','convert'].forEach(id=>closeGuide(id));}});
 
 window.onload=()=>{
   loadSetting();
