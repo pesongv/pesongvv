@@ -1486,9 +1486,10 @@ function convertParsePasteFor(id){
     if(!content)return;
     const idx=cls.data.findIndex(row=>{
       const num=(row['반/번호']||'').trim();
-      const cleanNum=num.replace(/[-\/]/g,'');
-      const cleanFirst=firstLine.replace(/[-\/]/g,'');
-      return num===firstLine||firstLine.includes(num)||num.includes(firstLine)||cleanNum===cleanFirst;
+      // 숫자만 추출해서 비교
+      const numDigits=num.replace(/[^0-9]/g,'');
+      const firstDigits=firstLine.replace(/[^0-9]/g,'');
+      return num===firstLine||numDigits===firstDigits;
     });
     if(idx>=0){cls.data[idx][cls.col]=content;matched++;}
   });
